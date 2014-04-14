@@ -65,7 +65,11 @@ namespace KerbalJointReinforcement
             // can expect a future update to be available.
             //
 
-            return Versioning.version_minor == 23;
+            bool compatible = false;
+            if (Versioning.version_minor == 23 && Versioning.Revision == 5)
+                compatible = true;
+
+            return compatible;
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
