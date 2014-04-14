@@ -617,10 +617,6 @@ namespace KerbalJointReinforcement
         public static bool reinforceLaunchClampsFurther = false;
         public static bool useVolumeNotArea = false;
 
-        public static float linearDriveSpring = 0;
-        public static float linearDriveDamper = 0;
-        public static float linearMaxForceFactor = 0;
-
         public static float angularDriveSpring = 0;
         public static float angularDriveDamper = 0;
         public static float angularMaxForceFactor = 0;
@@ -803,10 +799,6 @@ namespace KerbalJointReinforcement
             reinforceLaunchClampsFurther = config.GetValue<bool>("reinforceLaunchClampsFurther");
             useVolumeNotArea = config.GetValue<bool>("useVolumeNotArea");
 
-            linearDriveSpring = config.GetValue<float>("linearDriveSpring");
-            linearDriveDamper = config.GetValue<float>("linearDriveDamper");
-            linearMaxForceFactor = config.GetValue<float>("linearMaxForceFactor");
-
             angularDriveSpring = config.GetValue<float>("angularDriveSpring");
             angularDriveDamper = config.GetValue<float>("angularDriveDamper");
             angularMaxForceFactor = config.GetValue<float>("angularMaxForceFactor");
@@ -851,7 +843,6 @@ namespace KerbalJointReinforcement
             if (debug)
             {
                 StringBuilder debugString = new StringBuilder();
-                debugString.AppendLine("\n\rLinear Drive: \n\rSpring: " + linearDriveSpring + "\n\rDamp: " + linearDriveDamper + "\n\rMax Force Factor: " + linearMaxForceFactor);
                 debugString.AppendLine("\n\rAngular Drive: \n\rSpring: " + angularDriveSpring + "\n\rDamp: " + angularDriveDamper + "\n\rMax Force Factor: " + angularMaxForceFactor);
 
                 debugString.AppendLine("\n\rJoint Strength Multipliers: \n\rForce Multiplier: " + breakForceMultiplier + "\n\rTorque Multiplier: " + breakTorqueMultiplier);
