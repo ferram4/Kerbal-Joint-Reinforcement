@@ -328,8 +328,8 @@ namespace KerbalJointReinforcement
             {
                 StrutConnector s = p as StrutConnector;
                 JointDrive strutDrive = s.strutJoint.Joint.angularXDrive;
-                strutDrive.positionSpring = float.MaxValue;
-                strutDrive.maximumForce = float.MaxValue;
+                strutDrive.positionSpring = JointUtils.decouplerAndClampJointStrength;
+                strutDrive.maximumForce = JointUtils.decouplerAndClampJointStrength;
                 s.strutJoint.Joint.xDrive = s.strutJoint.Joint.yDrive = s.strutJoint.Joint.zDrive = s.strutJoint.Joint.angularXDrive = s.strutJoint.Joint.angularYZDrive = strutDrive;
 
                 float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
@@ -627,6 +627,8 @@ namespace KerbalJointReinforcement
         public static float breakStrengthPerArea = 40;
         public static float breakTorquePerMOI = 40000;
 
+        public static float decouplerAndClampJointStrength = float.MaxValue;
+
         public static float stiffeningExtensionMassRatioThreshold = 5;
 
         public static bool debug = false;
@@ -809,6 +811,10 @@ namespace KerbalJointReinforcement
             breakStrengthPerArea = config.GetValue<float>("breakStrengthPerArea", 40);
             breakTorquePerMOI = config.GetValue<float>("breakTorquePerMOI", 40000);
 
+            decouplerAndClampJointStrength = config.GetValue<float>("decouplerAndClampJointStrength", float.MaxValue);
+            if (decouplerAndClampJointStrength < 0)
+                decouplerAndClampJointStrength = float.MaxValue;
+
             stiffeningExtensionMassRatioThreshold = config.GetValue<float>("stiffeningExtensionMassRatioThreshold", 5);
 
             massForAdjustment = config.GetValue<float>("massForAdjustment", 1);
@@ -848,6 +854,8 @@ namespace KerbalJointReinforcement
                 debugString.AppendLine("\n\rJoint Strength Multipliers: \n\rForce Multiplier: " + breakForceMultiplier + "\n\rTorque Multiplier: " + breakTorqueMultiplier);
                 debugString.AppendLine("Joint Force Strength Per Unit Area: " + breakStrengthPerArea);
                 debugString.AppendLine("Joint Torque Strength Per Unit MOI: " + breakTorquePerMOI);
+
+                debugString.AppendLine("Strength For Additional Decoupler And Clamp Joints: " + decouplerAndClampJointStrength);
 
                 debugString.AppendLine("\n\rDebug Output: " + debug);
                 debugString.AppendLine("Reinforce Attach Nodes: " + reinforceAttachNodes);
@@ -1133,8 +1141,8 @@ namespace KerbalJointReinforcement
         private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
         {
             Rigidbody rigidBody = partConnectedByJoint.rigidbody;
-            float breakForce = float.MaxValue;
-            float breakTorque = float.MaxValue;
+            float breakForce = JointUtils.decouplerAndClampJointStrength;
+            float breakTorque = JointUtils.decouplerAndClampJointStrength;
             Vector3 anchor, axis;
             anchor = Vector3.zero;
             axis = Vector3.right;
@@ -1342,8 +1350,8 @@ namespace KerbalJointReinforcement
         private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
         {
             Rigidbody rigidBody = partConnectedByJoint.rigidbody;
-            float breakForce = float.MaxValue;
-            float breakTorque = float.MaxValue;
+            float breakForce = JointUtils.decouplerAndClampJointStrength;
+            float breakTorque = JointUtils.decouplerAndClampJointStrength;
             Vector3 anchor, axis;
 
             anchor = Vector3.zero;
