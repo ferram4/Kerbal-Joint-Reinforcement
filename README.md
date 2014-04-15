@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v2.2
+Kerbal Joint Reinforcement, v2.3
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -28,18 +28,18 @@ The source folder simply contains the source code (in C#) for the plugin.  If yo
 
 	- Prevents launch clamps from shifting on load, which could destroy the vehicle on the pad
 
--- Option to stiffen interstage connections
+-- Stiffen interstage connections
 
 	- Parts connected to a decoupler will be connected to each other, reducing flex at the connection to reasonable levels
 
 
--- Option to stiffen launch clamp connections
+-- Stiffen launch clamp connections
 
 	- Less vehicle movement on vessel initialization
 	- Warning: may cause spontaneous rocket disintegration if rocket is too large and overconstrained (far too many lanuch clamps; their connections will fight each other and give rise to phantom forces)
 
 
--- Option to increase stiffness and strengths of connections
+-- Increase stiffness and strengths of connections
 
 	- Larger parts will have stiffer connections to balance their larger masses / sizes
 
@@ -62,14 +62,15 @@ General Values
 	bool	debug					0			--Toggles debug output to log; please activate and provide log if making a bug report
 	float	massForAdjustment			0.01			--Parts below this mass will not be stiffened
 	float	stiffeningExtensionMassRatioThreshold	5			--Sets mass ratio needed between parts to extend Decoupler Stiffening one part further than it normally would have gone; essentially, if the code would have stopped at part A, but part B that it is connected to is >5 times as massive as part A, include part B
+	float	decouplerAndClampJointStrength		-1			--Sets breaking strength for joints involved in decoupler and clamp additional strengthening; -1 makes them unbreakable
 
 Angular "Drive" Values (universally scales angular strength of connections)
 
 	Type	Name				Default Value		Action
 
-	float	angularDriveSpring		100000000000		--Factor used to scale stiffness of angular connections
-	float	angularDriveDamper		6000000			--Factor used to scale damping of motion in angular connections
-	float	angularMaxForceFactor		1000			--Factor used to scale maximum force that can be applied before connection "gives out"; does not control joint strength
+	float	angularDriveSpring		5000000000		--Factor used to scale stiffness of angular connections
+	float	angularDriveDamper		0			--Factor used to scale damping of motion in angular connections
+	float	angularMaxForceFactor		-1			--Factor used to scale maximum force that can be applied before connection "gives out"; does not control joint strength; -1 makes this value infinite
 
 Joint Strength Values
 
@@ -77,8 +78,8 @@ Joint Strength Values
 
 	float	breakForceMultiplier		1			--Factor scales the failure strength (for forces) of joint connections; 1 gives stock strength
 	float	breakTorqueMultiplier		1			--Factor scales the failure strength (for torque) of joint connections; 1 gives stock strength
-	float	breakStrengthPerArea		40			--Overrides above values if not equal to 1; joint strength is based on the area of the part and failure strength is equal to this value times connection area
-	float	breakTorquePerMOI		40000			--Same as above value, but for torques rather than forces and is based on the moment of inertia, not area
+	float	breakStrengthPerArea		60			--Overrides above values if not equal to 1; joint strength is based on the area of the part and failure strength is equal to this value times connection area
+	float	breakTorquePerMOI		60000			--Same as above value, but for torques rather than forces and is based on the moment of inertia, not area
 
 Part and Module Exemptions
 
@@ -114,6 +115,13 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v2.3
+
+	Features
+	--Updated attach node reinforcement to use properties closer to stock joint performance, but stiffer.
+	--Decoupler and clamp stiffening increased in strength for use in Real Solar System
+	--Removed unused config values
+
 v2.2
 
 	Features

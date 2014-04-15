@@ -1,6 +1,6 @@
 ﻿/*
 Kerbal Joint Reinforcement, v2.3
-Copyright 2013, Michael Ferrara, aka Ferram4
+Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
 
@@ -804,6 +804,8 @@ namespace KerbalJointReinforcement
             angularDriveSpring = config.GetValue<float>("angularDriveSpring");
             angularDriveDamper = config.GetValue<float>("angularDriveDamper");
             angularMaxForceFactor = config.GetValue<float>("angularMaxForceFactor");
+            if (angularMaxForceFactor < 0)
+                angularMaxForceFactor = float.MaxValue;
 
             breakForceMultiplier = config.GetValue<float>("breakForceMultiplier", 1);
             breakTorqueMultiplier = config.GetValue<float>("breakTorqueMultiplier", 1);
