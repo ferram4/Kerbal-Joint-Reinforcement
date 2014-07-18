@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v2.4
+Kerbal Joint Reinforcement, v2.4.1
 Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.

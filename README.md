@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v2.4
+Kerbal Joint Reinforcement, v2.4.1
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -115,6 +115,12 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v2.4.1
+
+	Bugfixes:
+	--Included JsonFx.dll, which is required by ModStats
+	--Relabeled ModStatistics.dll to allow simple overwriting for ModStats updates
+
 v2.4
 
 	Features
