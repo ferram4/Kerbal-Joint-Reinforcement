@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v2.4.1
+Kerbal Joint Reinforcement, v2.4.2
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -115,6 +115,10 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v2.4.2
+	Features
+	--KSP 0.24.1 compatibility
+	
 v2.4.1
 
 	Bugfixes:

@@ -66,7 +66,7 @@ namespace KerbalJointReinforcement
             //
 
             bool compatible = false;
-            if (Versioning.version_minor == 24 && Versioning.Revision == 0
+            if (Versioning.version_minor == 24 && (Versioning.Revision == 0 || Versioning.Revision == 1)
                 || Versioning.version_minor == 23 && Versioning.Revision == 5)
                 compatible = true;
 
