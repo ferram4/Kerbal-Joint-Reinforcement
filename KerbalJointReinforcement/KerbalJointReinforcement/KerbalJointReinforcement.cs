@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v2.4.3
+Kerbal Joint Reinforcement, v2.4.4
 Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -43,6 +43,9 @@ namespace KerbalJointReinforcement
 
         public void Start()
         {
+            if (!CompatibilityChecker.IsAllCompatible())
+                return;
+
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
@@ -54,6 +57,9 @@ namespace KerbalJointReinforcement
 
         public void OnDestroy()
         {
+            if (!CompatibilityChecker.IsAllCompatible())
+                return;
+
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Remove(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Remove(OnVesselOnRails);
@@ -483,6 +489,8 @@ namespace KerbalJointReinforcement
                     if (Mathf.Abs(Vector3.Dot(up, ndir)) > 0.9f)
                     {
                         radius = Mathf.Min(JointUtils.CalculateRadius(main, ndir), JointUtils.CalculateRadius(connectedPart, ndir));
+                        if (radius <= 0.001)
+                            radius = node.size * 1.25f;
                         area = Mathf.PI * radius * radius;                      //Area of cylinder
                         momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
                     }
@@ -508,6 +516,8 @@ namespace KerbalJointReinforcement
                 else
                 {
                     radius = Mathf.Min(JointUtils.CalculateRadius(p, dir), JointUtils.CalculateRadius(connectedPart, dir));
+                    if (radius <= 0.001)
+                        radius = node.size * 1.25f;
                     area = Mathf.PI * radius * radius;                      //Area of cylinder
                     momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
                 }
@@ -517,6 +527,8 @@ namespace KerbalJointReinforcement
             {
 
                 radius = Mathf.Min(JointUtils.CalculateRadius(p, Vector3.up), JointUtils.CalculateRadius(connectedPart, Vector3.up));
+                if (radius <= 0.001)
+                    radius = node.size * 1.25f;
                 area = Mathf.PI * radius * radius;                      //Area of cylinder
                 momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
             }
@@ -563,7 +575,6 @@ namespace KerbalJointReinforcement
             p.attachJoint.Joint.angularXDrive = p.attachJoint.Joint.angularYZDrive = drive;
 
             p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
-
 
             p.attachJoint.SetBreakingForces(breakForce, breakTorque);
 
