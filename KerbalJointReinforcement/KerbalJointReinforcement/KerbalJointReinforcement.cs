@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v2.4.4
+Kerbal Joint Reinforcement, v2.4.5
 Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -71,6 +71,9 @@ namespace KerbalJointReinforcement
 
         private void OnVesselWasModified(Vessel v)
         {
+            if ((object)v == null)
+                return; 
+            
             if (JointUtils.debug)
             {
                 StringBuilder debugString = new StringBuilder();
@@ -78,7 +81,7 @@ namespace KerbalJointReinforcement
                 debugString.AppendLine(System.Environment.StackTrace);
                 debugString.AppendLine("Now contains: ");
                 foreach (Part p in v.Parts)
-                    debugString.AppendLine("  " + p.partInfo.name + " (" + p.uid + ")");
+                    debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ")");
                 Debug.Log(debugString);
             }
 
@@ -88,6 +91,9 @@ namespace KerbalJointReinforcement
 
         private void OnVesselOffRails(Vessel v)
         {
+            if ((object)v == null)
+                return; 
+            
             RunVesselJointUpdateFunction(v);
             if(!vesselOffRailsTick.ContainsKey(v))
                 vesselOffRailsTick.Add(v, numTicksForEasing);
@@ -95,6 +101,9 @@ namespace KerbalJointReinforcement
 
         private void OnVesselOnRails(Vessel v)
         {
+            if ((object)v == null)
+                return;
+
             if (updatedVessels.Contains(v))
             {
                 if (vesselOffRailsTick.ContainsKey(v))
@@ -118,7 +127,7 @@ namespace KerbalJointReinforcement
             if (JointUtils.debug)
             {
                 Debug.Log("KJR: Processing vessel " + v.id + " (" + v.GetName() + "); root " +
-                            v.rootPart.partInfo.name + " (" + v.rootPart.uid + ")");
+                            v.rootPart.partInfo.name + " (" + v.rootPart.flightID + ")");
             }
 
             bool child_parts = false;
@@ -147,7 +156,7 @@ namespace KerbalJointReinforcement
                     }
 
                 if (JointUtils.reinforceLaunchClampsFurther)
-                    if (p.Modules.Contains("LaunchClamp"))
+                    if (p.Modules.Contains("LaunchClamp") && p.parent != null)
                     {
                         p.breakingForce = Mathf.Infinity;
                         p.breakingTorque = Mathf.Infinity;
@@ -323,8 +332,8 @@ namespace KerbalJointReinforcement
             {
                 if (JointUtils.debug)
                 {
-                    Debug.Log("KJR: Already processed part before: " + p.partInfo.name + " (" + p.uid + ") -> " +
-                              p.parent.partInfo.name + " (" + p.parent.uid + ")");
+                    Debug.Log("KJR: Already processed part before: " + p.partInfo.name + " (" + p.flightID + ") -> " +
+                              p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                 }
 
                 return;
@@ -360,7 +369,7 @@ namespace KerbalJointReinforcement
             {
                 if (JointUtils.debug)
                 {
-                    Debug.Log("KJR: Part mass too low, skipping: " + p.partInfo.name + " (" + p.uid + ")");
+                    Debug.Log("KJR: Part mass too low, skipping: " + p.partInfo.name + " (" + p.flightID + ")");
                 }
 
                 return;
@@ -394,7 +403,7 @@ namespace KerbalJointReinforcement
             if (JointUtils.debug)
             {
                 debugString.AppendLine("Original joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
-                debugString.AppendLine("  " + p.partInfo.name + " (" + p.uid + ") -> " + p.parent.partInfo.name + " (" + p.parent.uid + ")");
+                debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                 debugString.AppendLine("");
                 debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                 debugString.AppendLine("");
@@ -581,7 +590,7 @@ namespace KerbalJointReinforcement
             if (JointUtils.debug)
             {
                 debugString.AppendLine("Updated joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
-                debugString.AppendLine("  " + p.partInfo.name + " (" + p.uid + ") -> " + p.parent.partInfo.name + " (" + p.parent.uid + ")");
+                debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                 debugString.AppendLine("");
                 debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                 debugString.AppendLine("");
