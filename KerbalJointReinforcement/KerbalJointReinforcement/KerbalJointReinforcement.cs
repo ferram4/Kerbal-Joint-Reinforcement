@@ -21,10 +21,11 @@ Copyright 2014, Michael Ferrara, aka Ferram4
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
 using UnityEngine;
 using KSP.IO;
 using KSP;
-using System.Reflection;
+using CompoundParts;
 
 namespace KerbalJointReinforcement
 {
@@ -325,11 +326,10 @@ namespace KerbalJointReinforcement
 
         private void UpdatePartJoint(Part p)
         {
-            if (!JointUtils.JointAdjustmentValid(p) || p.rb == null)
+            if (!JointUtils.JointAdjustmentValid(p) || p.rb == null || p.attachJoint == null)
                 return;
 
-            if (p.attachJoint.Joint is ConfigurableJoint &&
-                p.attachMethod == AttachNodeMethod.LOCKED_JOINT)
+            if (p.attachMethod == AttachNodeMethod.LOCKED_JOINT)
             {
                 if (JointUtils.debug)
                 {
@@ -339,39 +339,76 @@ namespace KerbalJointReinforcement
 
                 return;
             }
-
+            List<ConfigurableJoint> jointList;
             if (p is StrutConnector)
             {
                 StrutConnector s = p as StrutConnector;
-                JointDrive strutDrive = s.strutJoint.Joint.angularXDrive;
-                strutDrive.positionSpring = JointUtils.decouplerAndClampJointStrength;
-                strutDrive.maximumForce = JointUtils.decouplerAndClampJointStrength;
-                s.strutJoint.Joint.xDrive = s.strutJoint.Joint.yDrive = s.strutJoint.Joint.zDrive = s.strutJoint.Joint.angularXDrive = s.strutJoint.Joint.angularYZDrive = strutDrive;
 
-                float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
+                if (s.jointTarget == null || s.jointRoot == null)
+                    return;
 
-                s.strutJoint.SetBreakingForces(s.strutJoint.Joint.breakForce * scalingFactor, s.strutJoint.Joint.breakTorque * scalingFactor);
+                jointList = JointUtils.GetJointListFromAttachJoint(s.strutJoint);
+
+                for(int i = 0; i < jointList.Count; i++)
+                {
+                    ConfigurableJoint j = jointList[i];
+
+                    JointDrive strutDrive = j.angularXDrive;
+                    strutDrive.positionSpring = JointUtils.decouplerAndClampJointStrength;
+                    strutDrive.maximumForce = JointUtils.decouplerAndClampJointStrength;
+                    j.xDrive = j.yDrive = j.zDrive = j.angularXDrive = j.angularYZDrive = strutDrive;
+
+                    j.xMotion = j.yMotion = j.zMotion = ConfigurableJointMotion.Locked;
+                    j.angularXMotion = j.angularYMotion = j.angularZMotion = ConfigurableJointMotion.Locked;
+
+                    //float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
+
+                    j.breakForce = JointUtils.decouplerAndClampJointStrength;
+                    j.breakTorque = JointUtils.decouplerAndClampJointStrength;
+                }
 
                 p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
-
-                return;
             }
-
-            FieldInfo[] fields = p.attachJoint.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
-            List<ConfigurableJoint> jointList = new List<ConfigurableJoint>();
-            Type jointListType = jointList.GetType();
-            
-            for(int i = 0; i < fields.Length; i++)
+            if(p is CompoundPart)
             {
-                FieldInfo field = fields[i];
-                if(field.FieldType == jointListType)
+                if (p.Modules.Contains("CModuleStrut"))
                 {
-                    jointList = (List<ConfigurableJoint>)field.GetValue(p.attachJoint);
-                    break;
+                    CModuleStrut s = (CModuleStrut)p.Modules["CModuleStrut"];
+
+                    if (s.jointTarget == null || s.jointRoot == null)
+                        return;
+
+                    jointList = JointUtils.GetJointListFromAttachJoint(s.strutJoint);
+
+                    for (int i = 0; i < jointList.Count; i++)
+                    {
+                        ConfigurableJoint j = jointList[i];
+
+                        JointDrive strutDrive = j.angularXDrive;
+                        strutDrive.positionSpring = JointUtils.decouplerAndClampJointStrength;
+                        strutDrive.maximumForce = JointUtils.decouplerAndClampJointStrength;
+                        j.xDrive = j.yDrive = j.zDrive = j.angularXDrive = j.angularYZDrive = strutDrive;
+
+                        j.xMotion = j.yMotion = j.zMotion = ConfigurableJointMotion.Locked;
+                        j.angularXMotion = j.angularYMotion = j.angularZMotion = ConfigurableJointMotion.Locked;
+
+                        //float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
+
+                        j.breakForce = JointUtils.decouplerAndClampJointStrength;
+                        j.breakTorque = JointUtils.decouplerAndClampJointStrength;
+                    }
+
+                    p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
                 }
             }
+            
+            jointList = JointUtils.GetJointListFromAttachJoint(p.attachJoint);
 
             StringBuilder debugString = new StringBuilder();
+
+            bool addAdditionalJointToParent = JointUtils.multiPartAttachNodeReinforcement;
+            addAdditionalJointToParent &= !(p.Modules.Contains("LaunchClamp") || (p.parent.Modules.Contains("ModuleDecouple") || p.parent.Modules.Contains("ModuleAnchoredDecoupler")));
+            addAdditionalJointToParent &= !(p is StrutConnector || p.Modules.Contains("CModuleStrut"));
 
             float partMass = p.mass + p.GetResourceMass();
             for (int i = 0; i < jointList.Count; i++)
@@ -595,20 +632,65 @@ namespace KerbalJointReinforcement
                     momentOfInertia = Mathf.Pow(momentOfInertia, 1.5f);
                 }
 
-                if (!((JointUtils.breakStrengthPerArea <= 0 && JointUtils.breakTorquePerMOI <= 0) || area <= 0))
-                {
-                    breakForce = Mathf.Max(JointUtils.breakStrengthPerArea * area, breakForce);
-                    breakTorque = Mathf.Max(JointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
-                }
+
+                breakForce = Mathf.Max(JointUtils.breakStrengthPerArea * area, breakForce);
+                breakTorque = Mathf.Max(JointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
+                
 
                 JointDrive drive = j.angularXDrive;
-                drive.positionSpring = Mathf.Max(area * JointUtils.angularDriveSpring, drive.positionSpring);
-                drive.positionDamper = Mathf.Max(area * JointUtils.angularDriveDamper, drive.positionDamper);
-                j.angularXDrive = j.angularYZDrive = drive;
-                
+                drive.positionSpring = Mathf.Max(momentOfInertia * JointUtils.angularDriveSpring, drive.positionSpring);
+                drive.positionDamper = Mathf.Max(momentOfInertia * JointUtils.angularDriveDamper, drive.positionDamper);
+                j.angularXDrive = j.angularYZDrive = j.slerpDrive = drive;
+
+                SoftJointLimit lim = new SoftJointLimit();
+                lim.damper = 0;
+                lim.spring = 0;
+                lim.limit = 0;
+                lim.bounciness = 0;
+
+                j.linearLimit = j.angularYLimit = j.angularZLimit = j.lowAngularXLimit = j.highAngularXLimit = lim;
+
+                j.targetAngularVelocity = Vector3.zero;
+                j.targetVelocity = Vector3.zero;
+                j.targetRotation = Quaternion.identity;
+                j.targetPosition = Vector3.zero;
+
+                j.breakForce = breakForce;
+                j.breakTorque = breakTorque;
+
                 p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
 
-                p.attachJoint.SetBreakingForces(breakForce, breakTorque);
+                if (addAdditionalJointToParent && p.parent.parent != null)
+                {
+                    addAdditionalJointToParent = false;
+                    ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                    Part newConnectedPart = p.parent.parent;
+
+                    newJoint.connectedBody = newConnectedPart.rb;
+                    newJoint.axis = Vector3.right;
+                    newJoint.secondaryAxis = Vector3.forward;
+                    newJoint.anchor = Vector3.zero;
+                    newJoint.connectedAnchor = p.transform.worldToLocalMatrix.MultiplyPoint(newConnectedPart.transform.position);
+
+                    newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = drive;
+
+                    newJoint.xDrive = j.xDrive;
+                    newJoint.yDrive = j.yDrive;
+                    newJoint.zDrive = j.zDrive;
+
+                    newJoint.linearLimit = newJoint.angularYLimit = newJoint.angularZLimit = newJoint.lowAngularXLimit = newJoint.highAngularXLimit = lim;
+
+                    newJoint.targetAngularVelocity = Vector3.zero;
+                    newJoint.targetVelocity = Vector3.zero;
+                    newJoint.targetRotation = Quaternion.identity;
+                    newJoint.targetPosition = Vector3.zero;
+
+                    newJoint.breakForce = breakForce;
+                    newJoint.breakTorque = breakTorque;
+
+                    jointList.Add(newJoint);
+                }
 
                 if (JointUtils.debug)
                 {
@@ -658,6 +740,7 @@ namespace KerbalJointReinforcement
     {
 
         public static bool reinforceAttachNodes = false;
+        public static bool multiPartAttachNodeReinforcement = true;
         public static bool reinforceDecouplersFurther = false;
         public static bool reinforceLaunchClampsFurther = false;
         public static bool useVolumeNotArea = false;
@@ -686,6 +769,24 @@ namespace KerbalJointReinforcement
 
         public static float massForAdjustment = 0.001f;
 
+        public static List<ConfigurableJoint> GetJointListFromAttachJoint(PartJoint partJoint)
+        {
+            FieldInfo[] fields = partJoint.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            List<ConfigurableJoint> jointList = new List<ConfigurableJoint>();
+            Type jointListType = jointList.GetType();
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                FieldInfo field = fields[i];
+                if (field.FieldType == jointListType)
+                {
+                    return (List<ConfigurableJoint>)field.GetValue(partJoint);
+
+                }
+            }
+
+            return null;
+        }
         public static bool JointAdjustmentValid(Part p)
         {
             foreach (string s in exemptPartTypes)
@@ -699,6 +800,24 @@ namespace KerbalJointReinforcement
             return true;
         }
 
+        public static bool GetsDecouplerStiffeningExtension(Part p)
+        {
+            string typeString = p.GetType().ToString();
+
+            foreach (string s in decouplerStiffeningExtensionType)
+                if (typeString == s)
+                {
+                    return true;
+                }
+            foreach (string s in decouplerStiffeningExtensionType)
+                if (p.Modules.Contains(s))
+                {
+                    return true;
+                }
+
+            return false;
+        }
+
         public static List<Part> DecouplerPartStiffeningList(Part p, bool childrenNotParent, bool onlyAddLastPart)
         {
             List<Part> tmpPartList = new List<Part>();
@@ -706,19 +825,8 @@ namespace KerbalJointReinforcement
             // non-physical parts are skipped over by attachJoints, so do the same
             if (p.physicalSignificance == Part.PhysicalSignificance.NONE)
                 extend = true;
-            foreach (string s in decouplerStiffeningExtensionType)
-                if (p.GetType().ToString() == s)
-                {
-                    extend = true;
-                    break;
-                }
             if (!extend)
-                foreach (string s in decouplerStiffeningExtensionType)
-                    if (p.Modules.Contains(s))
-                    {
-                        extend = true;
-                        break;
-                    }
+                extend = GetsDecouplerStiffeningExtension(p);
 
             List<Part> newAdditions = new List<Part>();
             if (extend)
@@ -754,6 +862,8 @@ namespace KerbalJointReinforcement
                             {
 
                                 float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
+                                if (massRatio < 1)
+                                    massRatio = 1 / massRatio;
 
                                 if (massRatio > stiffeningExtensionMassRatioThreshold)
                                 {
@@ -769,6 +879,8 @@ namespace KerbalJointReinforcement
                     if (p.parent)
                     {
                         float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
+                        if (massRatio < 1)
+                            massRatio = 1 / massRatio;
 
                         if (massRatio > stiffeningExtensionMassRatioThreshold)
                         {
@@ -1272,7 +1384,7 @@ namespace KerbalJointReinforcement
                 if (JointUtils.debug)
                     Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
 
-                BreakAllInvalidJoints();
+                BreakAllInvalidJointsAndRebuild();
                 break;
             }
         }
@@ -1343,7 +1455,7 @@ namespace KerbalJointReinforcement
                 GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
         }
 
-        private void BreakAllInvalidJoints()
+        private void BreakAllInvalidJointsAndRebuild()
         {
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
 
@@ -1412,6 +1524,7 @@ namespace KerbalJointReinforcement
 
             newJoint.connectedBody = rigidBody;
             newJoint.anchor = anchor;
+            newJoint.connectedAnchor = partWithJoint.transform.worldToLocalMatrix.MultiplyPoint(partConnectedByJoint.transform.position);
             newJoint.axis = axis;
             newJoint.secondaryAxis = Vector3.forward;
             newJoint.breakForce = breakForce;
@@ -1420,6 +1533,9 @@ namespace KerbalJointReinforcement
             newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
             newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
+
+            newJoint.breakForce = breakForce;
+            newJoint.breakTorque = breakTorque;
 
             joints.Add(newJoint);
 
