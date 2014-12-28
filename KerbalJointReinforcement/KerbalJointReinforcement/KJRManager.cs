@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v2.4.5
+Kerbal Joint Reinforcement, v3.0
 Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -76,6 +76,8 @@ namespace KerbalJointReinforcement
             updatedVessels = null;
             vesselOffRailsTick = null;
             vesselJointStrengthened = null;
+
+            multiJointManager.OnDestroy();
             multiJointManager = null;
         }
 
@@ -671,6 +673,8 @@ namespace KerbalJointReinforcement
                 if (addAdditionalJointToParent && p.parent.parent != null)
                 {
                     addAdditionalJointToParent = false;
+                    if (!KJRJointUtils.JointAdjustmentValid(p.parent))
+                        continue;
                     ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
                     Part newConnectedPart = p.parent.parent;

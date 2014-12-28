@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v2.4.5
+Kerbal Joint Reinforcement, v3.0
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -42,6 +42,7 @@ The source folder simply contains the source code (in C#) for the plugin.  If yo
 -- Increase stiffness and strengths of connections
 
 	- Larger parts will have stiffer connections to balance their larger masses / sizes
+	- Sequential parts in a stack will be connected with a stiff, but weak connection to add even more stiffness and counteract wobble
 
 -- Option to make connection strengths weaker to counteract increases in stiffness
 
@@ -56,9 +57,10 @@ General Values
 	Type	Name					Default Value		Action
 
 	bool	reinforceAttachNodes			1			--Toggles stiffening of all vessel joints
+	bool	multiPartAttachNodeReinforcement	1			--Toggles additional stiffening by connecting parts in a stack one part further, but at a weaker strength
 	bool	reinforceDecouplersFurther		1			--Toggles stiffening of interstage connections
 	bool	reinforceLaunchClampsFurther		1			--Toggles stiffening of launch clamp connections
-	bool	useVolumeNotArea			0			--Switches to calculating connection area based on volume, not area; not technically correct, but allows a better approximation of very large rockets
+	bool	useVolumeNotArea			1			--Switches to calculating connection area based on volume, not area; not technically correct, but allows a better approximation of very large rockets
 	bool	debug					0			--Toggles debug output to log; please activate and provide log if making a bug report
 	float	massForAdjustment			0.01			--Parts below this mass will not be stiffened
 	float	stiffeningExtensionMassRatioThreshold	5			--Sets mass ratio needed between parts to extend Decoupler Stiffening one part further than it normally would have gone; essentially, if the code would have stopped at part A, but part B that it is connected to is >5 times as massive as part A, include part B
@@ -115,6 +117,17 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.0
+	Features  
+	--MultiPart joints: weak, but stiff connections along a stack that will add even more stiffness without making the connection cheatingly strong  
+	--Proper, guaranteed application of stiffened properties, regardless of stock joint parameters  
+	--Updated default config values for greater sanity  
+	--Refactoring of code for sanity
+
+	BugFixes
+	--Longstanding issue with radially-attached parts that were larger than their parent are now fixed
+	--Many NREs from bad events or bad states now avoided
+	
 v2.4.5
 	Features
 	--KSP 0.90 compatibility

@@ -23,7 +23,7 @@ namespace KerbalJointReinforcement
             GameEvents.onPartJointBreak.Add(OnJointBreak);
         }
 
-        ~KJRMultiJointManager()
+        public void OnDestroy()
         {
             Debug.Log("KJRMultiJointManager cleanup");
             GameEvents.onPartJointBreak.Remove(OnJointBreak);
@@ -46,6 +46,8 @@ namespace KerbalJointReinforcement
 
         private void OnJointBreak(PartJoint partJoint)
         {
+            if (partJoint == null)
+                return;
             TwoConfigJointTuple configTuple;
             if (multiJointDict.TryGetValue(partJoint, out configTuple))
             {
