@@ -50,13 +50,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompatibilityChecker.cs" />
-    <Compile Include="KerbalJointReinforcement.cs" />
+    <Compile Include="KJRDecouplerReinforcementModule.cs" />
+    <Compile Include="KJRController.cs" />
+    <Compile Include="KJRJointUtils.cs" />
+    <Compile Include="KJRLaunchClampReinforcementModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>xcopy /y "$(TargetPath)" "$(SolutionDir)..\GameData\KerbalJointReinforcement\Plugin"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

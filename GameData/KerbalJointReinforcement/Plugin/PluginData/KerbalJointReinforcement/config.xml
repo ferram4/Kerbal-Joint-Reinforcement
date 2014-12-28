@@ -1,13 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <config>
     <bool name="reinforceAttachNodes">1</bool>
+    <bool name="multiPartAttachNodeReinforcement">1</bool>
     <bool name="reinforceDecouplersFurther">1</bool>
     <bool name="reinforceLaunchClampsFurther">1</bool>
-    <bool name="useVolumeNotArea">0</bool>
+    <bool name="useVolumeNotArea">1</bool>
     <bool name="debug">0</bool>
 
-    <float name="angularDriveSpring">5000000000</float>
-    <float name="angularDriveDamper">0</float>
+    <float name="angularDriveSpring">5e12</float>
+    <float name="angularDriveDamper">500</float>
     <float name="angularMaxForceFactor">-1</float>
 
     <float name="decouplerAndClampJointStrength">-1</float>
