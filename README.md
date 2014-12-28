@@ -125,7 +125,7 @@ v3.0
 	--Refactoring of code for sanity
 
 	BugFixes
-	--Longstanding issue with radially-attached parts that were larger than their parent are now fixed
+	--Longstanding issue with radially-attached parts that were larger than their parent are now fixed  
 	--Many NREs from bad events or bad states now avoided
 	
 v2.4.5
