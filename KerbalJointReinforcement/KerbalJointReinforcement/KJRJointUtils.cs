@@ -245,7 +245,7 @@ namespace KerbalJointReinforcement
 
         public static void LoadConstants()
         {
-            PluginConfiguration config = PluginConfiguration.CreateForType<KJRController>();
+            PluginConfiguration config = PluginConfiguration.CreateForType<KJRManager>();
             config.load();
 
             reinforceAttachNodes = config.GetValue<bool>("reinforceAttachNodes", true);

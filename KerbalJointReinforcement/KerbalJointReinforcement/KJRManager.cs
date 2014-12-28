@@ -27,11 +27,12 @@ using CompoundParts;
 namespace KerbalJointReinforcement
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class KJRController : MonoBehaviour
+    public class KJRManager : MonoBehaviour
     {
-        List<Vessel> updatedVessels = new List<Vessel>();
-        Dictionary<Vessel, int> vesselOffRailsTick = new Dictionary<Vessel, int>();
-        Dictionary<Vessel, List<Joint>> vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
+        List<Vessel> updatedVessels;
+        Dictionary<Vessel, int> vesselOffRailsTick;
+        Dictionary<Vessel, List<Joint>> vesselJointStrengthened;
+        KJRMultiJointManager multiJointManager;
 
         FloatCurve physicsEasingCurve = new FloatCurve();
         int numTicksForEasing = 70;
@@ -53,6 +54,11 @@ namespace KerbalJointReinforcement
 
             physicsEasingCurve.Add(numTicksForEasing, 1);
             physicsEasingCurve.Add(0, 0);
+
+            updatedVessels = new List<Vessel>();
+            vesselOffRailsTick = new Dictionary<Vessel, int>();
+            vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
+            multiJointManager = new KJRMultiJointManager();
         }
 
         public void OnDestroy()
@@ -67,6 +73,10 @@ namespace KerbalJointReinforcement
 
             if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                 InputLockManager.RemoveControlLock("KJRLoadLock");
+            updatedVessels = null;
+            vesselOffRailsTick = null;
+            vesselJointStrengthened = null;
+            multiJointManager = null;
         }
 
         private void OnVesselWasModified(Vessel v)
@@ -687,7 +697,9 @@ namespace KerbalJointReinforcement
                     newJoint.breakForce = breakForce;
                     newJoint.breakTorque = breakTorque;
 
-                    jointList.Add(newJoint);
+                    //jointList.Add(newJoint);
+                    multiJointManager.RegisterMultiJoint(p.attachJoint, newJoint);
+                    multiJointManager.RegisterMultiJoint(p.parent.attachJoint, newJoint);
                 }
 
                 if (KJRJointUtils.debug)

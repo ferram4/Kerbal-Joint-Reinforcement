@@ -51,9 +51,10 @@
   <ItemGroup>
     <Compile Include="CompatibilityChecker.cs" />
     <Compile Include="KJRDecouplerReinforcementModule.cs" />
-    <Compile Include="KJRController.cs" />
+    <Compile Include="KJRManager.cs" />
     <Compile Include="KJRJointUtils.cs" />
     <Compile Include="KJRLaunchClampReinforcementModule.cs" />
+    <Compile Include="KJRMultiJointHoldingModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
