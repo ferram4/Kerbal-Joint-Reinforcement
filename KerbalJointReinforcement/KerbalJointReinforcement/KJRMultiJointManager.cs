@@ -29,29 +29,44 @@ namespace KerbalJointReinforcement
     //If the joint from A to B or B to C is broken, this will destroy the joint A to C and then destroy itself
     class KJRMultiJointManager
     {
+        public static KJRMultiJointManager fetch;
         class TwoConfigJointTuple
         {
             public ConfigurableJoint A, B;
         }
 
-        Dictionary<PartJoint, TwoConfigJointTuple> multiJointDict;
+        Dictionary<Part, TwoConfigJointTuple> multiJointDict;
 
         public KJRMultiJointManager()
         {
-            multiJointDict = new Dictionary<PartJoint, TwoConfigJointTuple>();
-            GameEvents.onPartJointBreak.Add(OnJointBreak);
+            multiJointDict = new Dictionary<Part, TwoConfigJointTuple>();
+            fetch = this;
+            GameEvents.onVesselCreate.Add(VesselCreate);
         }
 
         public void OnDestroy()
         {
             Debug.Log("KJRMultiJointManager cleanup");
-            GameEvents.onPartJointBreak.Remove(OnJointBreak);
+            GameEvents.onVesselCreate.Remove(VesselCreate);
         }
 
         public void RegisterMultiJoint(PartJoint partJoint, ConfigurableJoint multiJoint)
         {
+            RegisterMultiJoint(partJoint.Parent, multiJoint);
+        }
+        
+        //This entire scheme relies on a simple fact: when a vessel is created, the part that was decoupled is the root part
+        //Therefore, we only need to use vessel.RootPart
+        private void VesselCreate(Vessel v)
+        {
+            Debug.Log(v.name + " joint break");
+            OnJointBreak(v.rootPart);
+        }
+
+        public void RegisterMultiJoint(Part part, ConfigurableJoint multiJoint)
+        {
             TwoConfigJointTuple configTuple;
-            if(multiJointDict.TryGetValue(partJoint, out configTuple))
+            if (multiJointDict.TryGetValue(part, out configTuple))
             {
                 configTuple.B = multiJoint;
             }
@@ -59,23 +74,34 @@ namespace KerbalJointReinforcement
             {
                 configTuple = new TwoConfigJointTuple();
                 configTuple.A = multiJoint;
-                multiJointDict.Add(partJoint, configTuple);
+                multiJointDict.Add(part, configTuple);
             }
         }
 
-        private void OnJointBreak(PartJoint partJoint)
+        public void OnJointBreak(PartJoint partJoint)
         {
-            if (partJoint == null)
+            OnJointBreak(partJoint.Parent);
+        }
+
+        public void OnJointBreak(Part part)
+        {
+            if (part == null)
                 return;
             TwoConfigJointTuple configTuple;
-            if (multiJointDict.TryGetValue(partJoint, out configTuple))
+            if (multiJointDict.TryGetValue(part, out configTuple))
             {
                 if (configTuple.A != null)
+                {
                     GameObject.Destroy(configTuple.A);
+                    Debug.Log("Destroyed A");
+                }
 
                 if (configTuple.B != null)
+                {
                     GameObject.Destroy(configTuple.B);
-                multiJointDict.Remove(partJoint);
+                    Debug.Log("Destroyed B");
+                }
+                multiJointDict.Remove(part);
             }
         }
     }

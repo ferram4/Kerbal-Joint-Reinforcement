@@ -77,7 +77,6 @@ namespace KerbalJointReinforcement
             vesselOffRailsTick = null;
             vesselJointStrengthened = null;
 
-            multiJointManager.OnDestroy();
             multiJointManager = null;
         }
 
@@ -702,8 +701,8 @@ namespace KerbalJointReinforcement
                     newJoint.breakTorque = breakTorque;
 
                     //jointList.Add(newJoint);
-                    multiJointManager.RegisterMultiJoint(p.attachJoint, newJoint);
-                    multiJointManager.RegisterMultiJoint(p.parent.attachJoint, newJoint);
+                    multiJointManager.RegisterMultiJoint(p, newJoint);
+                    multiJointManager.RegisterMultiJoint(p.parent, newJoint);
                 }
 
                 if (KJRJointUtils.debug)
