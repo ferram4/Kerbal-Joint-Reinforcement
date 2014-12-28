@@ -40,6 +40,10 @@ namespace KerbalJointReinforcement
         public void Awake()
         {
             KJRJointUtils.LoadConstants();
+            updatedVessels = new List<Vessel>();
+            vesselOffRailsTick = new Dictionary<Vessel, int>();
+            vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
+            multiJointManager = new KJRMultiJointManager();
         }
 
         public void Start()
@@ -54,11 +58,7 @@ namespace KerbalJointReinforcement
 
             physicsEasingCurve.Add(numTicksForEasing, 1);
             physicsEasingCurve.Add(0, 0);
-
-            updatedVessels = new List<Vessel>();
-            vesselOffRailsTick = new Dictionary<Vessel, int>();
-            vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
-            multiJointManager = new KJRMultiJointManager();
+            
         }
 
         public void OnDestroy()
@@ -159,7 +159,7 @@ namespace KerbalJointReinforcement
                 }
 
                 if (KJRJointUtils.reinforceDecouplersFurther)
-                    if ((p.Modules.Contains("ModuleDecouple") || p.Modules.Contains("ModuleAnchoredDecoupler")) && !p.Modules.Contains("DecouplerJointReinforcementModule"))
+                    if ((p.Modules.Contains("ModuleDecouple") || p.Modules.Contains("ModuleAnchoredDecoupler")) && !p.Modules.Contains("KJRDecouplerReinforcementModule"))
                     {
                         KJRJointUtils.AddDecouplerJointReinforcementModule(p);
                         continue;
@@ -174,7 +174,7 @@ namespace KerbalJointReinforcement
                         if (KJRJointUtils.debug)
                             Debug.Log("KJR: Launch Clamp Break Force / Torque increased");
 
-                        if(!p.Modules.Contains("LaunchClampReinforcementModule"))
+                        if (!p.Modules.Contains("KJRLaunchClampReinforcementModule"))
                             KJRJointUtils.AddLaunchClampReinforcementModule(p);
                     }
             }

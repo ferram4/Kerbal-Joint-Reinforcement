@@ -54,7 +54,7 @@
     <Compile Include="KJRManager.cs" />
     <Compile Include="KJRJointUtils.cs" />
     <Compile Include="KJRLaunchClampReinforcementModule.cs" />
-    <Compile Include="KJRMultiJointHoldingModule.cs" />
+    <Compile Include="KJRMultiJointManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
