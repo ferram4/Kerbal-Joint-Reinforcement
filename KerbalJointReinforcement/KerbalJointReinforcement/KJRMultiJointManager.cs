@@ -59,7 +59,7 @@ namespace KerbalJointReinforcement
         //Therefore, we only need to use vessel.RootPart
         private void VesselCreate(Vessel v)
         {
-            Debug.Log(v.name + " joint break");
+            //Debug.Log(v.name + " joint break");
             OnJointBreak(v.rootPart);
         }
 
@@ -93,13 +93,13 @@ namespace KerbalJointReinforcement
                 if (configTuple.A != null)
                 {
                     GameObject.Destroy(configTuple.A);
-                    Debug.Log("Destroyed A");
+                    //Debug.Log("Destroyed A");
                 }
 
                 if (configTuple.B != null)
                 {
                     GameObject.Destroy(configTuple.B);
-                    Debug.Log("Destroyed B");
+                    //Debug.Log("Destroyed B");
                 }
                 multiJointDict.Remove(part);
             }
