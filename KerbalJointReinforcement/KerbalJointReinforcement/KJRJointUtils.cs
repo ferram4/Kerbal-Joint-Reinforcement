@@ -229,18 +229,18 @@ namespace KerbalJointReinforcement
 
         public static void AddDecouplerJointReinforcementModule(Part p)
         {
-            p.AddModule("DecouplerJointReinforcementModule");
-            (p.Modules["DecouplerJointReinforcementModule"] as KJRDecouplerReinforcementModule).OnPartUnpack();
+            p.AddModule("KJRDecouplerReinforcementModule");
+            (p.Modules["KJRDecouplerReinforcementModule"] as KJRDecouplerReinforcementModule).OnPartUnpack();
             if (debug)
-                Debug.Log("Added DecouplerJointReinforcementModule to part " + p.partInfo.title);
+                Debug.Log("Added KJRDecouplerReinforcementModule to part " + p.partInfo.title);
         }
 
         public static void AddLaunchClampReinforcementModule(Part p)
         {
-            p.AddModule("LaunchClampReinforcementModule");
-            (p.Modules["LaunchClampReinforcementModule"] as KJRLaunchClampReinforcementModule).OnPartUnpack();
+            p.AddModule("KJRLaunchClampReinforcementModule");
+            (p.Modules["KJRLaunchClampReinforcementModule"] as KJRLaunchClampReinforcementModule).OnPartUnpack();
             if (debug)
-                Debug.Log("Added LaunchClampReinforcementModule to part " + p.partInfo.title);
+                Debug.Log("Added KJRLaunchClampReinforcementModule to part " + p.partInfo.title);
         }
 
         public static void LoadConstants()
