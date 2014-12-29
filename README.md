@@ -117,12 +117,12 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
-v3.0.1
-	BugFixes
-	--Fix some issues involving multipart joints
-	--More null checking for situations that shouldn't happen, but might
+v3.0.1  
+	BugFixes  
+	--Fix some issues involving multipart joints  
+	--More null checking for situations that shouldn't happen, but might  
 
-v3.0
+v3.0  
 	Features  
 	--MultiPart joints: weak, but stiff connections along a stack that will add even more stiffness without making the connection cheatingly strong  
 	--Proper, guaranteed application of stiffened properties, regardless of stock joint parameters  
