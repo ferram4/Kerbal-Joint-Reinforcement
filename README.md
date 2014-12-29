@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.0
+Kerbal Joint Reinforcement, v3.0.1
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -117,6 +117,11 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.0.1
+	BugFixes
+	--Fix some issues involving multipart joints
+	--More null checking for situations that shouldn't happen, but might
+
 v3.0
 	Features  
 	--MultiPart joints: weak, but stiff connections along a stack that will add even more stiffness without making the connection cheatingly strong  

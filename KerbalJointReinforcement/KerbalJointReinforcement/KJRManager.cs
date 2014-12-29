@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.0
+Kerbal Joint Reinforcement, v3.0.1
 Copyright 2014, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -77,6 +77,7 @@ namespace KerbalJointReinforcement
             vesselOffRailsTick = null;
             vesselJointStrengthened = null;
 
+            multiJointManager.OnDestroy();
             multiJointManager = null;
         }
 
@@ -358,40 +359,14 @@ namespace KerbalJointReinforcement
 
                 jointList = KJRJointUtils.GetJointListFromAttachJoint(s.strutJoint);
 
-                for(int i = 0; i < jointList.Count; i++)
+                if (jointList != null)
                 {
-                    ConfigurableJoint j = jointList[i];
-
-                    JointDrive strutDrive = j.angularXDrive;
-                    strutDrive.positionSpring = KJRJointUtils.decouplerAndClampJointStrength;
-                    strutDrive.maximumForce = KJRJointUtils.decouplerAndClampJointStrength;
-                    j.xDrive = j.yDrive = j.zDrive = j.angularXDrive = j.angularYZDrive = strutDrive;
-
-                    j.xMotion = j.yMotion = j.zMotion = ConfigurableJointMotion.Locked;
-                    j.angularXMotion = j.angularYMotion = j.angularZMotion = ConfigurableJointMotion.Locked;
-
-                    //float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
-
-                    j.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                    j.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-                }
-
-                p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
-            }
-            if(p is CompoundPart)
-            {
-                if (p.Modules.Contains("CModuleStrut"))
-                {
-                    CModuleStrut s = (CModuleStrut)p.Modules["CModuleStrut"];
-
-                    if (s.jointTarget == null || s.jointRoot == null)
-                        return;
-
-                    jointList = KJRJointUtils.GetJointListFromAttachJoint(s.strutJoint);
-
                     for (int i = 0; i < jointList.Count; i++)
                     {
                         ConfigurableJoint j = jointList[i];
+
+                        if (j == null)
+                            continue;
 
                         JointDrive strutDrive = j.angularXDrive;
                         strutDrive.positionSpring = KJRJointUtils.decouplerAndClampJointStrength;
@@ -410,8 +385,48 @@ namespace KerbalJointReinforcement
                     p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
                 }
             }
+            if(p is CompoundPart)
+            {
+                if (p.Modules.Contains("CModuleStrut"))
+                {
+                    CModuleStrut s = (CModuleStrut)p.Modules["CModuleStrut"];
+
+                    if (s.jointTarget == null || s.jointRoot == null)
+                        return;
+
+                    jointList = KJRJointUtils.GetJointListFromAttachJoint(s.strutJoint);
+
+                    if (jointList != null)
+                    {
+                        for (int i = 0; i < jointList.Count; i++)
+                        {
+                            ConfigurableJoint j = jointList[i];
+
+                            if (j == null)
+                                continue;
+
+                            JointDrive strutDrive = j.angularXDrive;
+                            strutDrive.positionSpring = KJRJointUtils.decouplerAndClampJointStrength;
+                            strutDrive.maximumForce = KJRJointUtils.decouplerAndClampJointStrength;
+                            j.xDrive = j.yDrive = j.zDrive = j.angularXDrive = j.angularYZDrive = strutDrive;
+
+                            j.xMotion = j.yMotion = j.zMotion = ConfigurableJointMotion.Locked;
+                            j.angularXMotion = j.angularYMotion = j.angularZMotion = ConfigurableJointMotion.Locked;
+
+                            //float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
+
+                            j.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                            j.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+                        }
+
+                        p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
+                    }
+                }
+            }
 
             jointList = KJRJointUtils.GetJointListFromAttachJoint(p.attachJoint);
+            if (jointList == null)
+                return;
 
             StringBuilder debugString = new StringBuilder();
 
@@ -423,6 +438,8 @@ namespace KerbalJointReinforcement
             for (int i = 0; i < jointList.Count; i++)
             {
                 ConfigurableJoint j = jointList[i];
+                if (j == null)
+                    continue;
 
                 String jointType = j.GetType().Name;
                 Rigidbody connectedBody = j.connectedBody;
