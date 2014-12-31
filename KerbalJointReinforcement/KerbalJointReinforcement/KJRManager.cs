@@ -689,7 +689,7 @@ namespace KerbalJointReinforcement
                 if (addAdditionalJointToParent && p.parent.parent != null)
                 {
                     addAdditionalJointToParent = false;
-                    if (!KJRJointUtils.JointAdjustmentValid(p.parent))
+                    if (!KJRJointUtils.JointAdjustmentValid(p.parent) || p.parent.parent.rb == null)
                         continue;
                     ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
