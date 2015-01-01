@@ -42,12 +42,14 @@ namespace KerbalJointReinforcement
             multiJointDict = new Dictionary<Part, TwoConfigJointTuple>();
             fetch = this;
             GameEvents.onVesselCreate.Add(VesselCreate);
+            GameEvents.onPartUndock.Add(OnJointBreak);
         }
 
         public void OnDestroy()
         {
             Debug.Log("KJRMultiJointManager cleanup");
             GameEvents.onVesselCreate.Remove(VesselCreate);
+            GameEvents.onPartUndock.Remove(OnJointBreak);
         }
 
         public void RegisterMultiJoint(PartJoint partJoint, ConfigurableJoint multiJoint)
