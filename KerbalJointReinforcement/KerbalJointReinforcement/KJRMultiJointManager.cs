@@ -30,19 +30,16 @@ namespace KerbalJointReinforcement
     class KJRMultiJointManager
     {
         public static KJRMultiJointManager fetch;
-        class TwoConfigJointTuple
-        {
-            public ConfigurableJoint A, B;
-        }
 
-        Dictionary<Part, TwoConfigJointTuple> multiJointDict;
+        Dictionary<Part, List<ConfigurableJoint>> multiJointDict;
 
         public KJRMultiJointManager()
         {
-            multiJointDict = new Dictionary<Part, TwoConfigJointTuple>();
+            multiJointDict = new Dictionary<Part, List<ConfigurableJoint>>();
             fetch = this;
             GameEvents.onVesselCreate.Add(VesselCreate);
             GameEvents.onPartUndock.Add(OnJointBreak);
+            GameEvents.onPartDie.Add(OnJointBreak);
         }
 
         public void OnDestroy()
@@ -50,6 +47,7 @@ namespace KerbalJointReinforcement
             Debug.Log("KJRMultiJointManager cleanup");
             GameEvents.onVesselCreate.Remove(VesselCreate);
             GameEvents.onPartUndock.Remove(OnJointBreak);
+            GameEvents.onPartDie.Remove(OnJointBreak);
         }
 
         public void RegisterMultiJoint(PartJoint partJoint, ConfigurableJoint multiJoint)
@@ -67,16 +65,16 @@ namespace KerbalJointReinforcement
 
         public void RegisterMultiJoint(Part part, ConfigurableJoint multiJoint)
         {
-            TwoConfigJointTuple configTuple;
-            if (multiJointDict.TryGetValue(part, out configTuple))
+            List<ConfigurableJoint> configJointList;
+            if (multiJointDict.TryGetValue(part, out configJointList))
             {
-                configTuple.B = multiJoint;
+                configJointList.Add(multiJoint);
             }
             else
             {
-                configTuple = new TwoConfigJointTuple();
-                configTuple.A = multiJoint;
-                multiJointDict.Add(part, configTuple);
+                configJointList = new List<ConfigurableJoint>();
+                configJointList.Add(multiJoint);
+                multiJointDict.Add(part, configJointList);
             }
         }
 
@@ -89,20 +87,16 @@ namespace KerbalJointReinforcement
         {
             if (part == null)
                 return;
-            TwoConfigJointTuple configTuple;
-            if (multiJointDict.TryGetValue(part, out configTuple))
+            List<ConfigurableJoint> configJointList;
+            if (multiJointDict.TryGetValue(part, out configJointList))
             {
-                if (configTuple.A != null)
+                for(int i = 0; i < configJointList.Count; i++)
                 {
-                    GameObject.Destroy(configTuple.A);
-                    //Debug.Log("Destroyed A");
+                    ConfigurableJoint joint = configJointList[i];
+                    if(joint != null)
+                        GameObject.Destroy(joint);
                 }
 
-                if (configTuple.B != null)
-                {
-                    GameObject.Destroy(configTuple.B);
-                    //Debug.Log("Destroyed B");
-                }
                 multiJointDict.Remove(part);
             }
         }

@@ -161,7 +161,7 @@ namespace KerbalJointReinforcement
                 }
 
                 if (KJRJointUtils.reinforceDecouplersFurther)
-                    if ((p.Modules.Contains("ModuleDecouple") || p.Modules.Contains("ModuleAnchoredDecoupler")) && !p.Modules.Contains("KJRDecouplerReinforcementModule"))
+                    if (ValidDecoupler(p))
                     {
                         KJRJointUtils.AddDecouplerJointReinforcementModule(p);
                         continue;
@@ -183,6 +183,11 @@ namespace KerbalJointReinforcement
 
             if (success || !child_parts)
                 updatedVessels.Add(v);
+        }
+
+        private bool ValidDecoupler(Part p)
+        {
+            return (p.Modules.Contains("ModuleDecouple") || p.Modules.Contains("ModuleAnchoredDecoupler")) && !p.Modules.Contains("KJRDecouplerReinforcementModule");
         }
 
 /*        public void LateUpdate()
@@ -689,8 +694,12 @@ namespace KerbalJointReinforcement
                 if (addAdditionalJointToParent && p.parent.parent != null)
                 {
                     addAdditionalJointToParent = false;
-                    if (!KJRJointUtils.JointAdjustmentValid(p.parent) || p.parent.parent.rb == null)
+                    if (!KJRJointUtils.JointAdjustmentValid(p.parent) || !KJRJointUtils.JointAdjustmentValid(p.parent.parent) || p.parent.parent.rb == null)
                         continue;
+
+                    if (ValidDecoupler(p) || ValidDecoupler(p.parent))
+                        continue;
+
                     ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
                     Part newConnectedPart = p.parent.parent;
@@ -720,6 +729,7 @@ namespace KerbalJointReinforcement
                     //jointList.Add(newJoint);
                     multiJointManager.RegisterMultiJoint(p, newJoint);
                     multiJointManager.RegisterMultiJoint(p.parent, newJoint);
+                    multiJointManager.RegisterMultiJoint(p.parent.parent, newJoint);
                 }
 
                 if (KJRJointUtils.debug)
