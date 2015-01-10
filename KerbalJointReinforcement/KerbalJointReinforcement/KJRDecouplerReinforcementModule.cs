@@ -131,7 +131,10 @@ namespace KerbalJointReinforcement
             }
 
             if (joints.Count > 0)
+            {
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+                GameEvents.onVesselCreate.Add(OnVesselWasModified);
+            }
 
             if (KJRJointUtils.debug)
                 Debug.Log(debugString.ToString());
@@ -140,7 +143,10 @@ namespace KerbalJointReinforcement
         public void OnPartPack()
         {
             if (joints.Count > 0)
+            {
                 GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+                GameEvents.onVesselCreate.Remove(OnVesselWasModified);
+            }
 
             foreach (ConfigurableJoint j in joints)
                 GameObject.Destroy(j);
@@ -152,12 +158,16 @@ namespace KerbalJointReinforcement
         public void OnDestroy()
         {
             if (joints.Count > 0)
+            {
                 GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+                GameEvents.onVesselCreate.Remove(OnVesselWasModified);
+            }
         }
 
         private void BreakAllInvalidJointsAndRebuild()
         {
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+            GameEvents.onVesselCreate.Remove(OnVesselWasModified);
 
             foreach (ConfigurableJoint j in joints)
                 GameObject.Destroy(j);

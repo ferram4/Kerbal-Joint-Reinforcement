@@ -54,7 +54,6 @@ namespace KerbalJointReinforcement
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
-            //GameEvents.onVesselLoaded.Add(RunVesselJointUpdateFunction);
 
             physicsEasingCurve.Add(numTicksForEasing, 1);
             physicsEasingCurve.Add(0, 0);
@@ -69,7 +68,6 @@ namespace KerbalJointReinforcement
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Remove(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Remove(OnVesselOnRails);
-            //GameEvents.onVesselLoaded.Remove(RunVesselJointUpdateFunction);
 
             if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                 InputLockManager.RemoveControlLock("KJRLoadLock");
@@ -246,6 +244,8 @@ namespace KerbalJointReinforcement
                                 p.crashTolerance = p.crashTolerance * 1e15f;
                                 p.breakingForce = p.breakingForce * 1e15f;
                                 p.breakingTorque = p.breakingTorque * 1e15f;
+                                if(p.attachJoint)
+                                    p.attachJoint.SetUnbreakable(true);
                                 
                                 Joint[] partJoints = p.GetComponents<Joint>();
 /*                                foreach (Joint j in partJoints)
@@ -314,6 +314,8 @@ namespace KerbalJointReinforcement
                             p.crashTolerance = p.crashTolerance * 1e-15f;
                             p.breakingForce = p.breakingForce * 1e-15f;
                             p.breakingTorque = p.breakingTorque * 1e-15f;
+                            if (p.attachJoint)
+                                p.attachJoint.SetUnbreakable(false);
                         }
 
                         removeVessels.Add(v);
@@ -327,6 +329,8 @@ namespace KerbalJointReinforcement
                             p.crashTolerance = p.crashTolerance * 1e-15f;
                             p.breakingForce = p.breakingForce * 1e-15f;
                             p.breakingTorque = p.breakingTorque * 1e-15f;
+                            if (p.attachJoint)
+                                p.attachJoint.SetUnbreakable(false);
                         }
 
                         removeVessels.Add(v);
@@ -688,6 +692,7 @@ namespace KerbalJointReinforcement
 
                 j.breakForce = breakForce;
                 j.breakTorque = breakTorque;
+                p.attachJoint.SetBreakingForces(j.breakForce, j.breakTorque);
 
                 p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
 
@@ -697,8 +702,8 @@ namespace KerbalJointReinforcement
                     if (!KJRJointUtils.JointAdjustmentValid(p.parent) || !KJRJointUtils.JointAdjustmentValid(p.parent.parent) || p.parent.parent.rb == null)
                         continue;
 
-                    if (ValidDecoupler(p) || ValidDecoupler(p.parent))
-                        continue;
+                    /*if (ValidDecoupler(p) || ValidDecoupler(p.parent))
+                        continue;*/
 
                     ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
