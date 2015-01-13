@@ -49,7 +49,7 @@ namespace KerbalJointReinforcement
         public static float surfaceAttachAreaMult = 10;
         public static float surfaceAttachMOIMult = 10;
 
-        public static float decouplerAndClampJointStrength = float.MaxValue;
+        public static float decouplerAndClampJointStrength = float.PositiveInfinity;
 
         public static float stiffeningExtensionMassRatioThreshold = 5;
 
@@ -155,8 +155,8 @@ namespace KerbalJointReinforcement
                             {
 
                                 float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
-                                if (massRatio < 1)
-                                    massRatio = 1 / massRatio;
+                                //if (massRatio < 1)
+                                //    massRatio = 1 / massRatio;
 
                                 if (massRatio > stiffeningExtensionMassRatioThreshold)
                                 {
@@ -172,8 +172,8 @@ namespace KerbalJointReinforcement
                     if (p.parent)
                     {
                         float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
-                        if (massRatio < 1)
-                            massRatio = 1 / massRatio;
+                        //if (massRatio < 1)
+                        //    massRatio = 1 / massRatio;
 
                         if (massRatio > stiffeningExtensionMassRatioThreshold)
                         {
@@ -215,7 +215,7 @@ namespace KerbalJointReinforcement
         }
 
 
-        private static float MaximumPossiblePartMass(Part p)
+        public static float MaximumPossiblePartMass(Part p)
         {
             float maxMass = p.mass;
             foreach (PartResource r in p.Resources)
@@ -266,9 +266,9 @@ namespace KerbalJointReinforcement
             breakStrengthPerArea = config.GetValue<float>("breakStrengthPerArea", 40);
             breakTorquePerMOI = config.GetValue<float>("breakTorquePerMOI", 40000);
 
-            decouplerAndClampJointStrength = config.GetValue<float>("decouplerAndClampJointStrength", float.MaxValue);
+            decouplerAndClampJointStrength = config.GetValue<float>("decouplerAndClampJointStrength", float.PositiveInfinity);
             if (decouplerAndClampJointStrength < 0)
-                decouplerAndClampJointStrength = float.MaxValue;
+                decouplerAndClampJointStrength = float.PositiveInfinity;
 
             stiffeningExtensionMassRatioThreshold = config.GetValue<float>("stiffeningExtensionMassRatioThreshold", 5);
 
@@ -418,7 +418,7 @@ namespace KerbalJointReinforcement
                 MeshFilter mf = t.GetComponent<MeshFilter>();
                 if (mf == null)
                     continue;
-                Mesh m = mf.mesh;
+                Mesh m = mf.sharedMesh;
 
                 if (m == null)
                     continue;

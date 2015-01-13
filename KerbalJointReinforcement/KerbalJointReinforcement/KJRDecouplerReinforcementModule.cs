@@ -96,7 +96,11 @@ namespace KerbalJointReinforcement
 
             parentParts = KJRJointUtils.DecouplerPartStiffeningList(part.parent, false, true);
             foreach (Part p in part.children)
+            {
                 childParts.AddRange(KJRJointUtils.DecouplerPartStiffeningList(p, true, true));
+                if (!childParts.Contains(p))
+                    childParts.Add(p);
+            }
 
             neighbours.Clear();
             neighbours.AddRange(parentParts);
