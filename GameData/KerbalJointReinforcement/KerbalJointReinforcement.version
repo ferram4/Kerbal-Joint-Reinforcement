@@ -3,8 +3,8 @@
   "URL": "https://raw.githubusercontent.com/ferram4/Kerbal-Joint-Reinforcement/master/KerbalJointReinforcement/KerbalJointReinforcement/obj/Release/KerbalJointReinforcement.version",
   "VERSION": {
     "MAJOR": 3,
-    "MINOR": 0,
-    "PATCH": 1
+    "MINOR": 1,
+    "PATCH": 0
   },
   "KSP_VERSION": {
     "MAJOR": 0,

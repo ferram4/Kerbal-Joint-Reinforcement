@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.0.1
+Kerbal Joint Reinforcement, v3.1.0
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -70,8 +70,8 @@ Angular "Drive" Values (universally scales angular strength of connections)
 
 	Type	Name				Default Value		Action
 
-	float	angularDriveSpring		5000000000		--Factor used to scale stiffness of angular connections
-	float	angularDriveDamper		0			--Factor used to scale damping of motion in angular connections
+	float	angularDriveSpring		5e12			--Factor used to scale stiffness of angular connections
+	float	angularDriveDamper		25			--Factor used to scale damping of motion in angular connections
 	float	angularMaxForceFactor		-1			--Factor used to scale maximum force that can be applied before connection "gives out"; does not control joint strength; -1 makes this value infinite
 
 Joint Strength Values
@@ -117,6 +117,15 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.1
+	Features
+	--Set multipart joints to account for large mass ratios in choosing which parts to join
+	--Set Decoupler Stiffenning to require the connection of immediate decoupler children to stiffen things even further
+
+	BugFixes
+	--Fixed a decoupling issues with multipart joints
+	--Fixed multipart joint lock-to-worldspace issues
+
 v3.0.1  
 	BugFixes  
 	--Fix some issues involving multipart joints  
