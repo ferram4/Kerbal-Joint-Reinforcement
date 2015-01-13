@@ -93,6 +93,8 @@ Part and Module Exemptions
 	string	exemptModuleType0		WingManipulator		--Part stiffening not applied to parts with this type of PartModule; exemption to prevent problems with pWings
 	string	exemptModuleType1		SingleGroupMan		--Part stiffening not applied to parts with this type of PartModule; exemption to prevent problems with procedural adapter included with pWings
 	string	exemptModuleType2		KerbalEVA		--Part stiffening not applied to parts with this type of PartModule; exemption to prevent problems with Kerbals in command seats
+	string	exemptModuleType3		MuMechToggle		--Part stiffening not applied to parts with this type of PartModule; exemption to prevent problems with Kerbals in command seats
+	string	exemptModuleType4		WingProcedural		--Part stiffening not applied to parts with this type of PartModule; exemption to prevent problems with Kerbals in command seats
 
 Further part and module exemptions can be added using the same formating and changing the number
 
