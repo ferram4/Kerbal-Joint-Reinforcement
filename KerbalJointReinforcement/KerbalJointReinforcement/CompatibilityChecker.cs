@@ -1,5 +1,5 @@
 ﻿/**
- * Copyright (c) 2015, Majiir
+ * Copyright (c) 2014, Majiir
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
