@@ -735,6 +735,13 @@ namespace KerbalJointReinforcement
                         if (massRat2 < 1)
                             massRat2 = 1 / massRat2;
 
+                        if(newConnectedPart.parent != null && newConnectedPart.parent.rb == null)
+                        {
+                            newConnectedPart = newConnectedPart.parent;
+                            partsCrossed.Add(newConnectedPart);
+                            numPartsFurther++;
+                        }
+
                         if (massRat1 > KJRJointUtils.stiffeningExtensionMassRatioThreshold || massRat2 > KJRJointUtils.stiffeningExtensionMassRatioThreshold)
                         {
                             if (newConnectedPart.parent != null)
