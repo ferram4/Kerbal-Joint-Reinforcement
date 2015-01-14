@@ -715,18 +715,17 @@ namespace KerbalJointReinforcement
                     Part newConnectedPart = p.parent.parent;
 
                     bool massRatioBelowThreshold = false;
-                    bool foundNonNullRb = false;
                     int numPartsFurther = 0;
 
                     float partMaxMass = KJRJointUtils.MaximumPossiblePartMass(p);
                     List<Part> partsCrossed = new List<Part>();
+                    List<Part> possiblePartsCrossed = new List<Part>();
 
                     partsCrossed.Add(p);
                     partsCrossed.Add(p.parent);
                     partsCrossed.Add(newConnectedPart);
 
-                    if (newConnectedPart.rb != null)
-                        foundNonNullRb = true;
+                    Rigidbody connectedRb = newConnectedPart.rb;
 
                     do
                     {
@@ -739,21 +738,19 @@ namespace KerbalJointReinforcement
                         if (massRat2 < 1)
                             massRat2 = 1 / massRat2;
 
-                        if(newConnectedPart.parent != null && newConnectedPart.parent.rb == null)
-                        {
-                            newConnectedPart = newConnectedPart.parent;
-                            partsCrossed.Add(newConnectedPart);
-                            numPartsFurther++;
-                            continue;
-                        }
-
                         if (massRat1 > KJRJointUtils.stiffeningExtensionMassRatioThreshold || massRat2 > KJRJointUtils.stiffeningExtensionMassRatioThreshold)
                         {
                             if (newConnectedPart.parent != null)
                             {
                                 newConnectedPart = newConnectedPart.parent;
-                                partsCrossed.Add(newConnectedPart);
-                                foundNonNullRb = true;
+                                if (newConnectedPart.rb == null)
+                                    possiblePartsCrossed.Add(newConnectedPart);
+                                else
+                                {
+                                    connectedRb = newConnectedPart.rb;
+                                    partsCrossed.AddRange(possiblePartsCrossed);
+                                    possiblePartsCrossed.Clear();
+                                }
                             }
                             else
                                 break;
@@ -763,12 +760,12 @@ namespace KerbalJointReinforcement
                             massRatioBelowThreshold = true;
                     } while (!massRatioBelowThreshold && numPartsFurther < 5);
 
-                    if (foundNonNullRb)
+                    if (connectedRb != null)
                     {
 
                         ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
-                        newJoint.connectedBody = newConnectedPart.rb;
+                        newJoint.connectedBody = connectedRb;
                         newJoint.axis = Vector3.right;
                         newJoint.secondaryAxis = Vector3.forward;
                         newJoint.anchor = Vector3.zero;
