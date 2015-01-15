@@ -119,8 +119,8 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
-v3.1.1
-	BugFixes
+v3.1.1  
+	BugFixes  
 	--Fixed a serious lock-to-worldspace issue involving multipart joints and physicsless parts
 
 v3.1  
