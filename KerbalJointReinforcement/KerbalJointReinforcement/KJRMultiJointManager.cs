@@ -49,11 +49,6 @@ namespace KerbalJointReinforcement
             GameEvents.onPartUndock.Remove(OnJointBreak);
             GameEvents.onPartDie.Remove(OnJointBreak);
         }
-
-        public void RegisterMultiJoint(PartJoint partJoint, ConfigurableJoint multiJoint)
-        {
-            RegisterMultiJoint(partJoint.Parent, multiJoint);
-        }
         
         //This entire scheme relies on a simple fact: when a vessel is created, the part that was decoupled is the root part
         //Therefore, we only need to use vessel.RootPart
@@ -63,10 +58,10 @@ namespace KerbalJointReinforcement
             OnJointBreak(v.rootPart);
         }
 
-        public void RegisterMultiJoint(Part part, ConfigurableJoint multiJoint)
+        public void RegisterMultiJoint(Part testPart, ConfigurableJoint multiJoint)
         {
             List<ConfigurableJoint> configJointList;
-            if (multiJointDict.TryGetValue(part, out configJointList))
+            if (multiJointDict.TryGetValue(testPart, out configJointList))
             {
                 configJointList.Add(multiJoint);
             }
@@ -74,7 +69,7 @@ namespace KerbalJointReinforcement
             {
                 configJointList = new List<ConfigurableJoint>();
                 configJointList.Add(multiJoint);
-                multiJointDict.Add(part, configJointList);
+                multiJointDict.Add(testPart, configJointList);
             }
         }
 

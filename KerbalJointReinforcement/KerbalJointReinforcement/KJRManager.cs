@@ -674,14 +674,16 @@ namespace KerbalJointReinforcement
                 drive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, drive.positionSpring);
                 drive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper, drive.positionDamper);
 
-                if (p.mass * 2f / drive.positionDamper < 0.08f)
+                /*float moi_avg = p.rb.inertiaTensor.magnitude;
+
+                moi_avg += (p.transform.localToWorldMatrix.MultiplyPoint(p.CoMOffset) - p.parent.transform.position).sqrMagnitude * p.rb.mass;
+
+                if (moi_avg * 2f / drive.positionDamper < 0.08f)
                 {
-                    drive.positionDamper = p.mass / (0.04f);
-                    float mass = p.mass;
+                    drive.positionDamper = moi_avg / (0.04f);
 
-                    drive.positionSpring = drive.positionDamper * drive.positionDamper / mass;
-                }
-
+                    drive.positionSpring = drive.positionDamper * drive.positionDamper / moi_avg;
+                }*/
 
                 j.angularXDrive = j.angularYZDrive = j.slerpDrive = drive;
 
@@ -742,6 +744,9 @@ namespace KerbalJointReinforcement
                         {
                             if (newConnectedPart.parent != null)
                             {
+                                if (!KJRJointUtils.JointAdjustmentValid(newConnectedPart.parent))
+                                    break;
+
                                 newConnectedPart = newConnectedPart.parent;
                                 if (newConnectedPart.rb == null)
                                     possiblePartsCrossed.Add(newConnectedPart);
@@ -749,6 +754,7 @@ namespace KerbalJointReinforcement
                                 {
                                     connectedRb = newConnectedPart.rb;
                                     partsCrossed.AddRange(possiblePartsCrossed);
+                                    partsCrossed.Add(newConnectedPart);
                                     possiblePartsCrossed.Clear();
                                 }
                             }
@@ -774,7 +780,7 @@ namespace KerbalJointReinforcement
                         //if(massRatioBelowThreshold)
                         //{
 
-                        newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = drive;
+                        newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = j.angularXDrive;
 
                         newJoint.xDrive = j.xDrive;
                         newJoint.yDrive = j.yDrive;
@@ -799,6 +805,34 @@ namespace KerbalJointReinforcement
                         //jointList.Add(newJoint);
                         for (int k = 0; k < partsCrossed.Count; k++)
                             multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
+                    }
+
+                    if(p.symmetryCounterparts != null && p.symmetryCounterparts.Count > 0)
+                    {
+                        for(int k = 0; k < p.symmetryCounterparts.Count; k++)
+                        {
+                            Part counterPart = p.symmetryCounterparts[k];
+                            if (counterPart.parent == p.parent && counterPart.rb != null)
+                            {
+                                Rigidbody rigidBody = counterPart.rb;
+                                ConfigurableJoint newJoint;
+
+                                newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                                newJoint.connectedBody = rigidBody;
+                                newJoint.anchor = Vector3.zero;
+                                newJoint.axis = Vector3.right;
+                                newJoint.secondaryAxis = Vector3.forward;
+                                newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                                newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+                                newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
+                                newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                                multiJointManager.RegisterMultiJoint(p, newJoint);
+                                multiJointManager.RegisterMultiJoint(counterPart, newJoint);
+                            }
+                        }
                     }
                 }
 
