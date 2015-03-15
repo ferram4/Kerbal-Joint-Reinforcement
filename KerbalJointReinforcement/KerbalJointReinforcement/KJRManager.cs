@@ -809,29 +809,49 @@ namespace KerbalJointReinforcement
 
                     if(p.symmetryCounterparts != null && p.symmetryCounterparts.Count > 0)
                     {
+                        Part linkPart = null;
+                        Vector3 center = p.transform.position;
+                        float cross = float.NegativeInfinity;
+                        for(int k = 0; k < p.symmetryCounterparts.Count; k++)
+                        {
+                            center += p.symmetryCounterparts[k].transform.position;
+                        }
+                        center /= (p.symmetryCounterparts.Count + 1);
+
                         for(int k = 0; k < p.symmetryCounterparts.Count; k++)
                         {
                             Part counterPart = p.symmetryCounterparts[k];
                             if (counterPart.parent == p.parent && counterPart.rb != null)
                             {
-                                Rigidbody rigidBody = counterPart.rb;
-                                ConfigurableJoint newJoint;
-
-                                newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
-
-                                newJoint.connectedBody = rigidBody;
-                                newJoint.anchor = Vector3.zero;
-                                newJoint.axis = Vector3.right;
-                                newJoint.secondaryAxis = Vector3.forward;
-                                newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                                newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-
-                                newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-                                newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-                                multiJointManager.RegisterMultiJoint(p, newJoint);
-                                multiJointManager.RegisterMultiJoint(counterPart, newJoint);
+                                float tmpCross = Vector3.Dot(Vector3.Cross(center - p.transform.position, counterPart.transform.position - p.transform.position), p.transform.up);
+                                if(tmpCross > cross)
+                                {
+                                    cross = tmpCross;
+                                    linkPart = counterPart;
+                                }
                             }
+                        }
+                        if (linkPart)
+                        {
+                            Rigidbody rigidBody = linkPart.rb;
+                            if (!linkPart.rb)
+                                continue;
+                            ConfigurableJoint newJoint;
+
+                            newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                            newJoint.connectedBody = rigidBody;
+                            newJoint.anchor = Vector3.zero;
+                            newJoint.axis = Vector3.right;
+                            newJoint.secondaryAxis = Vector3.forward;
+                            newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                            newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+                            newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
+                            newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                            multiJointManager.RegisterMultiJoint(p, newJoint);
+                            multiJointManager.RegisterMultiJoint(linkPart, newJoint);
                         }
                     }
                 }
