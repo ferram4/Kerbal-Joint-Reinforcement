@@ -766,7 +766,7 @@ namespace KerbalJointReinforcement
                             massRatioBelowThreshold = true;
                     } while (!massRatioBelowThreshold && numPartsFurther < 5);
 
-                    if (connectedRb != null)
+                    if (connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
                     {
 
                         ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();

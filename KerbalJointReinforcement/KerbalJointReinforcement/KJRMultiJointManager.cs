@@ -73,6 +73,25 @@ namespace KerbalJointReinforcement
             }
         }
 
+        public bool CheckMultiJointBetweenParts(Part testPart1, Part testPart2)
+        {
+            if (testPart1 == null || testPart2 == null || testPart1 == testPart2)
+                return false;
+
+            List<ConfigurableJoint> testMultiJoints;
+
+            if (!multiJointDict.TryGetValue(testPart1, out testMultiJoints))
+                return false;
+
+            Rigidbody testRb = testPart2.rb;
+
+            for (int i = 0; i < testMultiJoints.Count; i++)
+                if (testMultiJoints[i].connectedBody == testRb)
+                    return true;
+
+            return false;
+        }
+
         public void OnJointBreak(PartJoint partJoint)
         {
             OnJointBreak(partJoint.Parent);
