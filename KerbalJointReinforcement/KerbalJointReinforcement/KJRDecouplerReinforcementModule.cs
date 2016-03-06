@@ -120,11 +120,11 @@ namespace KerbalJointReinforcement
 
             foreach (Part p in parentParts)
             {
-                if (p == null || p.rigidbody == null || p.Modules.Contains("ProceduralFairingDecoupler") || !KJRJointUtils.JointAdjustmentValid(p))
+                if (p == null || p.rb == null || p.Modules.Contains("ProceduralFairingDecoupler") || !KJRJointUtils.JointAdjustmentValid(p))
                     continue;
                 foreach (Part q in childParts)
                 {
-                    if (q == null || q.rigidbody == null || q.Modules.Contains("ProceduralFairingDecoupler") || p == q || !KJRJointUtils.JointAdjustmentValid(q))
+                    if (q == null || q.rb == null || q.Modules.Contains("ProceduralFairingDecoupler") || p == q || !KJRJointUtils.JointAdjustmentValid(q))
                         continue;
 
                     StrutConnectParts(p, q);
@@ -224,7 +224,7 @@ namespace KerbalJointReinforcement
 
         private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
         {
-            Rigidbody rigidBody = partConnectedByJoint.rigidbody;
+            Rigidbody rigidBody = partConnectedByJoint.rb;
             float breakForce = KJRJointUtils.decouplerAndClampJointStrength;
             float breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
             Vector3 anchor, axis;

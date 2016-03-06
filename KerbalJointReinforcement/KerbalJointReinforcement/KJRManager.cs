@@ -48,7 +48,7 @@ namespace KerbalJointReinforcement
 
         public void Start()
         {
-            if (!CompatibilityChecker.IsAllCompatible())
+            if (!CompatibilityChecker.IsCompatible())
                 return;
 
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
@@ -62,7 +62,7 @@ namespace KerbalJointReinforcement
 
         public void OnDestroy()
         {
-            if (!CompatibilityChecker.IsAllCompatible())
+            if (!CompatibilityChecker.IsCompatible())
                 return;
 
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
@@ -494,7 +494,7 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Original joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
                     debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                     debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                     debugString.AppendLine("");
 
 
@@ -688,12 +688,16 @@ namespace KerbalJointReinforcement
                 j.angularXDrive = j.angularYZDrive = j.slerpDrive = drive;
 
                 SoftJointLimit lim = new SoftJointLimit();
-                lim.damper = 0;
-                lim.spring = 0;
                 lim.limit = 0;
                 lim.bounciness = 0;
 
+                SoftJointLimitSpring limSpring = new SoftJointLimitSpring();
+
+                limSpring.spring = 0;
+                limSpring.damper = 0;
+
                 j.linearLimit = j.angularYLimit = j.angularZLimit = j.lowAngularXLimit = j.highAngularXLimit = lim;
+                j.linearLimitSpring = j.angularYZLimitSpring = j.angularXLimitSpring = limSpring;
 
                 j.targetAngularVelocity = Vector3.zero;
                 j.targetVelocity = Vector3.zero;
@@ -861,7 +865,7 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Updated joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
                     debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                     debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                     debugString.AppendLine("");
 
 

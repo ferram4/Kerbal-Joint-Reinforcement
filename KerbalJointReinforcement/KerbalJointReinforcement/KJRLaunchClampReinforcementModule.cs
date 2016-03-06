@@ -146,7 +146,7 @@ namespace KerbalJointReinforcement
 
         private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
         {
-            Rigidbody rigidBody = partConnectedByJoint.rigidbody;
+            Rigidbody rigidBody = partConnectedByJoint.rb;
             float breakForce = KJRJointUtils.decouplerAndClampJointStrength;
             float breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
             Vector3 anchor, axis;
