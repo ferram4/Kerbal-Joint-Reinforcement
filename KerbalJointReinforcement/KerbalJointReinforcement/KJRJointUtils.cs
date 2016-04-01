@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.1.4
+Kerbal Joint Reinforcement, v3.1.5
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -63,7 +63,7 @@ namespace KerbalJointReinforcement
 
         public static List<ConfigurableJoint> GetJointListFromAttachJoint(PartJoint partJoint)
         {
-            FieldInfo[] fields = partJoint.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            /*FieldInfo[] fields = partJoint.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
             List<ConfigurableJoint> jointList = new List<ConfigurableJoint>();
             Type jointListType = jointList.GetType();
 
@@ -75,9 +75,9 @@ namespace KerbalJointReinforcement
                     return (List<ConfigurableJoint>)field.GetValue(partJoint);
 
                 }
-            }
+            }*/
 
-            return null;
+            return partJoint.joints;
         }
 
         public static bool JointAdjustmentValid(Part p)
