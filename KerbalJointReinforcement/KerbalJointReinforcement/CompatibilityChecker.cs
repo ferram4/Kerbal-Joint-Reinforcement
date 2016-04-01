@@ -64,7 +64,7 @@ namespace KerbalJointReinforcement
             // Even if you don't lock down functionality, you should return true if your users
             // can expect a future update to be available.
             //
-            return Versioning.version_minor == 0 && Versioning.version_major == 1;
+            return Versioning.version_minor == 1 && Versioning.version_major == 1;
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
@@ -159,11 +159,6 @@ namespace KerbalJointReinforcement
 
             String message = String.Empty;
 
-            if (IsWin64())
-            {
-                message += "WARNING: You are using 64-bit KSP on Windows. This version of KSP is known to cause crashes. It's highly recommended that you use either 32-bit KSP on Windows or switch to Linux.";
-            }
-
             if ((incompatible.Length > 0) || (incompatibleUnity.Length > 0))
             {
                 message += ((message == String.Empty) ? "Some" : "\n\nAdditionally, some") + " installed mods may be incompatible with this version of Kerbal Space Program. Features may be broken or disabled. Please check for updates to the listed mods.";
@@ -183,20 +178,15 @@ namespace KerbalJointReinforcement
                 }
             }
 
-            if ((incompatible.Length > 0) || (incompatibleUnity.Length > 0) || IsWin64())
+            if ((incompatible.Length > 0) || (incompatibleUnity.Length > 0))
             {
-                PopupDialog.SpawnPopupDialog("Incompatible Mods Detected", message, "OK", true, HighLogic.Skin);
+                PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), "Incompatible Mods Detected", message, "OK", true, HighLogic.UISkin);
             }
-        }
-
-        public static bool IsWin64()
-        {
-            return (IntPtr.Size == 8) && (Environment.OSVersion.Platform == PlatformID.Win32NT);
         }
 
         public static bool IsAllCompatible()
         {
-            return IsCompatible() && IsUnityCompatible() && !IsWin64();
+            return IsCompatible() && IsUnityCompatible();
         }
 
         private static IEnumerable<Type> getAllTypes()

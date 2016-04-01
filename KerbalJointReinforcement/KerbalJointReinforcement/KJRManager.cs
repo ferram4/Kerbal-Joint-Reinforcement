@@ -345,6 +345,7 @@ namespace KerbalJointReinforcement
 
         private void UpdatePartJoint(Part p)
         {
+            Rigidbody _pRigidBody = null;
             if (!KJRJointUtils.JointAdjustmentValid(p) || p.rb == null || p.attachJoint == null)
                 return;
 
@@ -494,7 +495,7 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Original joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
                     debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                     debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.GetComponentCached<Rigidbody>(ref _pRigidBody).inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                     debugString.AppendLine("");
 
 
@@ -688,12 +689,17 @@ namespace KerbalJointReinforcement
                 j.angularXDrive = j.angularYZDrive = j.slerpDrive = drive;
 
                 SoftJointLimit lim = new SoftJointLimit();
-                lim.damper = 0;
-                lim.spring = 0;
                 lim.limit = 0;
                 lim.bounciness = 0;
 
                 j.linearLimit = j.angularYLimit = j.angularZLimit = j.lowAngularXLimit = j.highAngularXLimit = lim;
+
+                SoftJointLimitSpring limSpring = new SoftJointLimitSpring();
+                limSpring.damper = 0;
+                limSpring.spring = 0;
+
+                j.linearLimitSpring = j.angularYZLimitSpring = j.angularXLimitSpring = limSpring;
+
 
                 j.targetAngularVelocity = Vector3.zero;
                 j.targetVelocity = Vector3.zero;
@@ -861,7 +867,7 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Updated joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
                     debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                     debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rigidbody.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.GetComponentCached<Rigidbody>(ref _pRigidBody).inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
                     debugString.AppendLine("");
 
 
