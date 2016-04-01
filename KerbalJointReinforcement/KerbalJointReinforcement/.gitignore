@@ -1,0 +1,5 @@
+/bin/Release/*
+/bin/Debug/
+/obj/
+
+!/bin/Release/KerbalJointReinforcement.dll
