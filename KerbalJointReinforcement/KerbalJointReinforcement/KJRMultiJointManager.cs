@@ -107,8 +107,10 @@ namespace KerbalJointReinforcement
                 for(int i = 0; i < configJointList.Count; i++)
                 {
                     ConfigurableJoint joint = configJointList[i];
-                    if(joint != null)
+                    if (joint != null)
+                    {
                         GameObject.Destroy(joint);
+                    }
                 }
 
                 multiJointDict.Remove(part);

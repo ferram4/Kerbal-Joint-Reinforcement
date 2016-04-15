@@ -36,6 +36,7 @@ namespace KerbalJointReinforcement
 
         FloatCurve physicsEasingCurve = new FloatCurve();
         int numTicksForEasing = 70;
+        int debugJointCount = 0;
 
         public void Awake()
         {
@@ -120,9 +121,9 @@ namespace KerbalJointReinforcement
                 {
                     foreach (Part p in v.Parts)
                     {
-                        p.crashTolerance = p.crashTolerance * 1e-15f;
-                        p.breakingForce = p.breakingForce * 1e-15f;
-                        p.breakingTorque = p.breakingTorque * 1e-15f;
+                        p.crashTolerance = p.crashTolerance / 10000;
+                        if (p.attachJoint)
+                            p.attachJoint.SetUnbreakable(false);
                     }
 
                     vesselOffRailsTick.Remove(v);
@@ -241,9 +242,7 @@ namespace KerbalJointReinforcement
                             List<Joint> jointList = new List<Joint>();
                             foreach (Part p in v.Parts)
                             {
-                                p.crashTolerance = p.crashTolerance * 1e15f;
-                                p.breakingForce = p.breakingForce * 1e15f;
-                                p.breakingTorque = p.breakingTorque * 1e15f;
+                                p.crashTolerance = p.crashTolerance * 10000f;
                                 if(p.attachJoint)
                                     p.attachJoint.SetUnbreakable(true);
                                 
@@ -311,9 +310,7 @@ namespace KerbalJointReinforcement
                     {
                         foreach (Part p in v.Parts)
                         {
-                            p.crashTolerance = p.crashTolerance * 1e-15f;
-                            p.breakingForce = p.breakingForce * 1e-15f;
-                            p.breakingTorque = p.breakingTorque * 1e-15f;
+                            p.crashTolerance = p.crashTolerance / 10000f;
                             if (p.attachJoint)
                                 p.attachJoint.SetUnbreakable(false);
                         }
@@ -326,9 +323,7 @@ namespace KerbalJointReinforcement
                     {
                         foreach (Part p in v.Parts)
                         {
-                            p.crashTolerance = p.crashTolerance * 1e-15f;
-                            p.breakingForce = p.breakingForce * 1e-15f;
-                            p.breakingTorque = p.breakingTorque * 1e-15f;
+                            p.crashTolerance = p.crashTolerance / 10000f;
                             if (p.attachJoint)
                                 p.attachJoint.SetUnbreakable(false);
                         }
@@ -670,10 +665,10 @@ namespace KerbalJointReinforcement
                 breakTorque = Mathf.Max(KJRJointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
                 
 
-                JointDrive drive = j.angularXDrive;
-                drive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, drive.positionSpring);
-                drive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper, drive.positionDamper);
-
+                JointDrive angDrive = j.angularXDrive;
+                angDrive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, angDrive.positionSpring);
+                angDrive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper, angDrive.positionDamper);
+                angDrive.maximumForce = breakTorque;
                 /*float moi_avg = p.rb.inertiaTensor.magnitude;
 
                 moi_avg += (p.transform.localToWorldMatrix.MultiplyPoint(p.CoMOffset) - p.parent.transform.position).sqrMagnitude * p.rb.mass;
@@ -684,8 +679,12 @@ namespace KerbalJointReinforcement
 
                     drive.positionSpring = drive.positionDamper * drive.positionDamper / moi_avg;
                 }*/
+                j.angularXDrive = j.angularYZDrive = j.slerpDrive = angDrive;
 
-                j.angularXDrive = j.angularYZDrive = j.slerpDrive = drive;
+                JointDrive linDrive = j.xDrive;
+                linDrive.maximumForce = breakForce;
+                j.xDrive = j.yDrive = j.zDrive = linDrive;
+
 
                 SoftJointLimit lim = new SoftJointLimit();
                 lim.limit = 0;
@@ -886,10 +885,10 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Joint Motion Locked: " + Convert.ToString(p.attachJoint.Joint.xMotion == ConfigurableJointMotion.Locked));
 
                     debugString.AppendLine("Angular Drive");
-                    debugString.AppendLine("Position Spring: " + drive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + drive.positionDamper);
-                    debugString.AppendLine("Max Force: " + drive.maximumForce);
-                    debugString.AppendLine("Mode: " + drive.mode);
+                    debugString.AppendLine("Position Spring: " + angDrive.positionSpring);
+                    debugString.AppendLine("Position Damper: " + angDrive.positionDamper);
+                    debugString.AppendLine("Max Force: " + angDrive.maximumForce);
+                    debugString.AppendLine("Mode: " + angDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Cross Section Properties");
