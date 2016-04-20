@@ -82,7 +82,7 @@ namespace KerbalJointReinforcement
 
         private void OnVesselWasModified(Vessel v)
         {
-            if ((object)v == null)
+            if ((object)v == null || v.isEVA)
                 return; 
             
             if (KJRJointUtils.debug)
@@ -102,7 +102,7 @@ namespace KerbalJointReinforcement
 
         private void OnVesselOffRails(Vessel v)
         {
-            if ((object)v == null)
+            if ((object)v == null || v.isEVA)
                 return; 
             
             RunVesselJointUpdateFunction(v);
