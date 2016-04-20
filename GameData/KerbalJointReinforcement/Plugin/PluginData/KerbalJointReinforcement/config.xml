@@ -2,8 +2,8 @@
 <config>
     <bool name="reinforceAttachNodes">1</bool>
     <bool name="multiPartAttachNodeReinforcement">1</bool>
-    <bool name="reinforceDecouplersFurther">0</bool>
-    <bool name="reinforceLaunchClampsFurther">0</bool>
+    <bool name="reinforceDecouplersFurther">1</bool>
+    <bool name="reinforceLaunchClampsFurther">1</bool>
     <bool name="useVolumeNotArea">1</bool>
     <bool name="debug">0</bool>
 

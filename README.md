@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.1.4
+Kerbal Joint Reinforcement, v3.1.5
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -80,8 +80,8 @@ Joint Strength Values
 
 	float	breakForceMultiplier		1			--Factor scales the failure strength (for forces) of joint connections; 1 gives stock strength
 	float	breakTorqueMultiplier		1			--Factor scales the failure strength (for torque) of joint connections; 1 gives stock strength
-	float	breakStrengthPerArea		60			--Overrides above values if not equal to 1; joint strength is based on the area of the part and failure strength is equal to this value times connection area
-	float	breakTorquePerMOI		60000			--Same as above value, but for torques rather than forces and is based on the moment of inertia, not area
+	float	breakStrengthPerArea		1500			--Overrides above values if not equal to 1; joint strength is based on the area of the part and failure strength is equal to this value times connection area
+	float	breakTorquePerMOI		6000			--Same as above value, but for torques rather than forces and is based on the moment of inertia, not area
 
 Part and Module Exemptions
 
@@ -119,6 +119,13 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.1.5  
+	Features  
+	--Updated to be compatible with KSP 1.1  
+	--Very minor efficiency improvements in physics easing and stiffening of joints  
+	--Fully exempt EVAs from all KJR effects  
+	--Update config parameters to function with stock fixing of never-breakable joints bug  
+
 v3.1.4  
 	Misc  
 	--Fixed issue with .version file and compatible KSP versions
