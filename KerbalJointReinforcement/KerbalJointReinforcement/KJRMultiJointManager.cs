@@ -63,6 +63,10 @@ namespace KerbalJointReinforcement
             List<ConfigurableJoint> configJointList;
             if (multiJointDict.TryGetValue(testPart, out configJointList))
             {
+                for (int i = configJointList.Count - 1; i >= 0; --i)
+                    if (configJointList[i] == null)
+                        configJointList.RemoveAt(i);
+
                 configJointList.Add(multiJoint);
             }
             else
@@ -86,8 +90,17 @@ namespace KerbalJointReinforcement
             Rigidbody testRb = testPart2.rb;
 
             for (int i = 0; i < testMultiJoints.Count; i++)
-                if (testMultiJoints[i].connectedBody == testRb)
+            {
+                ConfigurableJoint joint = testMultiJoints[i];
+                if (joint == null)
+                {
+                    testMultiJoints.RemoveAt(i);
+                    --i;
+                    continue;
+                }
+                if (joint.connectedBody == testRb)
                     return true;
+            }
 
             return false;
         }

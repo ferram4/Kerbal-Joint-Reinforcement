@@ -55,6 +55,7 @@ namespace KerbalJointReinforcement
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
+            GameEvents.onVesselDestroy.Add(OnVesselOnRails);
 
             physicsEasingCurve.Add(numTicksForEasing, 1);
             physicsEasingCurve.Add(0, 0);
@@ -69,6 +70,7 @@ namespace KerbalJointReinforcement
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
             GameEvents.onVesselGoOffRails.Remove(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Remove(OnVesselOnRails);
+            GameEvents.onVesselDestroy.Remove(OnVesselOnRails);
 
             if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                 InputLockManager.RemoveControlLock("KJRLoadLock");
@@ -233,6 +235,9 @@ namespace KerbalJointReinforcement
                 List<Vessel> tmpList = new List<Vessel>(vesselOffRailsTick.Keys);
                 foreach(Vessel v in tmpList)
                 {
+                    if (v == null)
+                        continue;
+
                     int tick = vesselOffRailsTick[v];
                     if (tick > 0)
                     {
