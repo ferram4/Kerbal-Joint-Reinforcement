@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.1.5
+Kerbal Joint Reinforcement, v3.1.6
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -119,6 +119,12 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.1.6  
+	Features  
+	--Update to ensure KSP 1.1.1 compatibility  
+	--Minor optimization in joint setups  
+	--Remove B9 pWings from stiffening exemption, as it is unnecessary  
+
 v3.1.5  
 	Features  
 	--Updated to be compatible with KSP 1.1  

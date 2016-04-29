@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.1.5
+Kerbal Joint Reinforcement, v3.1.6
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -341,9 +341,9 @@ namespace KerbalJointReinforcement
         public static Vector3 GuessUpVector(Part part)
         {
             // For intakes, use the intake vector
-            if (part.Modules.Contains("ModuleResourceIntake"))
+            if (part.Modules.Contains<ModuleResourceIntake>())
             {
-                ModuleResourceIntake i = part.Modules["ModuleResourceIntake"] as ModuleResourceIntake;
+                ModuleResourceIntake i = part.Modules.GetModule<ModuleResourceIntake>();
                 Transform intakeTrans = part.FindModelTransform(i.intakeTransformName);
                 return part.transform.InverseTransformDirection(intakeTrans.forward);
             }

@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.1.5
+Kerbal Joint Reinforcement, v3.1.6
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -169,7 +169,7 @@ namespace KerbalJointReinforcement
                     }
 
                 if (KJRJointUtils.reinforceLaunchClampsFurther)
-                    if (p.Modules.Contains("LaunchClamp") && p.parent != null)
+                    if (p.Modules.Contains<LaunchClamp>() && p.parent != null)
                     {
                         p.breakingForce = Mathf.Infinity;
                         p.breakingTorque = Mathf.Infinity;
@@ -177,7 +177,7 @@ namespace KerbalJointReinforcement
                         if (KJRJointUtils.debug)
                             Debug.Log("KJR: Launch Clamp Break Force / Torque increased");
 
-                        if (!p.Modules.Contains("KJRLaunchClampReinforcementModule"))
+                        if (!p.Modules.Contains<KJRLaunchClampReinforcementModule>())
                             KJRJointUtils.AddLaunchClampReinforcementModule(p);
                     }
             }
@@ -188,7 +188,7 @@ namespace KerbalJointReinforcement
 
         private bool ValidDecoupler(Part p)
         {
-            return (p.Modules.Contains("ModuleDecouple") || p.Modules.Contains("ModuleAnchoredDecoupler")) && !p.Modules.Contains("KJRDecouplerReinforcementModule");
+            return (p.Modules.Contains<ModuleDecouple>() || p.Modules.Contains<ModuleAnchoredDecoupler>()) && !p.Modules.Contains<KJRDecouplerReinforcementModule>();
         }
 
 /*        public void LateUpdate()
@@ -259,7 +259,7 @@ namespace KerbalJointReinforcement
                                     jointList.Add(j);
                                     Debug.Log("Part: " + p.partInfo.title + " BreakForce = " + j.breakForce + " BreakTorque = " + j.breakTorque);
                                 }*/
-                                if (p.Modules.Contains("LaunchClamp"))
+                                if (p.Modules.Contains<LaunchClamp>())
                                 {
                                     foreach (Joint j in partJoints)
                                         if (j.connectedBody == null)
@@ -279,7 +279,7 @@ namespace KerbalJointReinforcement
                         else
                         {
                             foreach (Part p in v.Parts)
-                                if (p.Modules.Contains("LaunchClamp"))
+                                if (p.Modules.Contains<LaunchClamp>())
                                 {
                                     easing = true;
                                     break;
@@ -394,9 +394,9 @@ namespace KerbalJointReinforcement
                     p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
                 }
             }
-            if (p.Modules.Contains("CModuleStrut"))
+            if (p.Modules.Contains<CModuleStrut>())
             {
-                CModuleStrut s = (CModuleStrut)p.Modules["CModuleStrut"];
+                CModuleStrut s = p.Modules.GetModule<CModuleStrut>();
 
                 if (!(s.jointTarget == null || s.jointRoot == null))
                 {
@@ -439,7 +439,7 @@ namespace KerbalJointReinforcement
 
             bool addAdditionalJointToParent = KJRJointUtils.multiPartAttachNodeReinforcement;
             //addAdditionalJointToParent &= !(p.Modules.Contains("LaunchClamp") || (p.parent.Modules.Contains("ModuleDecouple") || p.parent.Modules.Contains("ModuleAnchoredDecoupler")));
-            addAdditionalJointToParent &= !(p is StrutConnector || p.Modules.Contains("CModuleStrut"));
+            addAdditionalJointToParent &= !(p is StrutConnector || p.Modules.Contains<CModuleStrut>());
 
             float partMass = p.mass + p.GetResourceMass();
             for (int i = 0; i < jointList.Count; i++)
@@ -472,8 +472,8 @@ namespace KerbalJointReinforcement
                 if (node == null)
                 {
                     // Check if it's a pair of coupled docking ports
-                    var dock1 = p.Modules["ModuleDockingNode"] as ModuleDockingNode;
-                    var dock2 = p.parent.Modules["ModuleDockingNode"] as ModuleDockingNode;
+                    var dock1 = p.Modules.GetModule<ModuleDockingNode>();
+                    var dock2 = p.parent.Modules.GetModule<ModuleDockingNode>();
 
                     //Debug.Log(dock1 + " " + (dock1 ? ""+dock1.dockedPartUId : "?") + " " + dock2 + " " + (dock2 ? ""+dock2.dockedPartUId : "?"));
 
