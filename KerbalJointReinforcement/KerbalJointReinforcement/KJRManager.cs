@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.1.7
+Kerbal Joint Reinforcement, v3.2.0
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -36,7 +36,6 @@ namespace KerbalJointReinforcement
 
         FloatCurve physicsEasingCurve = new FloatCurve();
         int numTicksForEasing = 70;
-        int debugJointCount = 0;
 
         public void Awake()
         {
@@ -59,7 +58,7 @@ namespace KerbalJointReinforcement
 
             physicsEasingCurve.Add(numTicksForEasing, 1);
             physicsEasingCurve.Add(0, 0);
-            
+
         }
 
         public void OnDestroy()
@@ -231,11 +230,10 @@ namespace KerbalJointReinforcement
         {
             if (FlightGlobals.ready && FlightGlobals.Vessels != null)
             {
-                List<Vessel> removeVessels = new List<Vessel>();
-                List<Vessel> tmpList = new List<Vessel>(vesselOffRailsTick.Keys);
-                foreach(Vessel v in tmpList)
+                for(int i = 0; i < updatedVessels.Count; ++i)
                 {
-                    if (v == null)
+                    Vessel v = updatedVessels[i];
+                    if (v == null || !vesselOffRailsTick.ContainsKey(v))
                         continue;
 
                     int tick = vesselOffRailsTick[v];
@@ -320,7 +318,7 @@ namespace KerbalJointReinforcement
                                 p.attachJoint.SetUnbreakable(false);
                         }
 
-                        removeVessels.Add(v);
+                        vesselOffRailsTick.Remove(v);
                         if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                             InputLockManager.RemoveControlLock("KJRLoadLock");
                     }
@@ -333,13 +331,11 @@ namespace KerbalJointReinforcement
                                 p.attachJoint.SetUnbreakable(false);
                         }
 
-                        removeVessels.Add(v);
+                        vesselOffRailsTick.Remove(v);
                         if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                             InputLockManager.RemoveControlLock("KJRLoadLock");
                     }
                 }
-                foreach (Vessel v in removeVessels)
-                    vesselOffRailsTick.Remove(v);
             }
         }
 
@@ -554,8 +550,8 @@ namespace KerbalJointReinforcement
                 }
 
 
-                float breakForce = p.breakingForce * KJRJointUtils.breakForceMultiplier;
-                float breakTorque = p.breakingTorque * KJRJointUtils.breakTorqueMultiplier;
+                float breakForce = Math.Min(p.breakingForce, connectedPart.breakingForce) * KJRJointUtils.breakForceMultiplier;
+                float breakTorque = Math.Min(p.breakingTorque, connectedPart.breakingTorque) * KJRJointUtils.breakTorqueMultiplier;
                 Vector3 anchor = j.anchor;
                 Vector3 connectedAnchor = j.connectedAnchor;
                 Vector3 axis = j.axis;
@@ -668,11 +664,10 @@ namespace KerbalJointReinforcement
 
                 breakForce = Mathf.Max(KJRJointUtils.breakStrengthPerArea * area, breakForce);
                 breakTorque = Mathf.Max(KJRJointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
-                
 
                 JointDrive angDrive = j.angularXDrive;
                 angDrive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, angDrive.positionSpring);
-                angDrive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper, angDrive.positionDamper);
+                angDrive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper * 0.1f, angDrive.positionDamper);
                 angDrive.maximumForce = breakTorque;
                 /*float moi_avg = p.rb.inertiaTensor.magnitude;
 
@@ -689,7 +684,6 @@ namespace KerbalJointReinforcement
                 JointDrive linDrive = j.xDrive;
                 linDrive.maximumForce = breakForce;
                 j.xDrive = j.yDrive = j.zDrive = linDrive;
-
 
                 SoftJointLimit lim = new SoftJointLimit();
                 lim.limit = 0;
@@ -772,7 +766,7 @@ namespace KerbalJointReinforcement
                         }
                         else
                             massRatioBelowThreshold = true;
-                    } while (!massRatioBelowThreshold && numPartsFurther < 5);
+                    } while (!massRatioBelowThreshold);// && numPartsFurther < 5);
 
                     if (connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
                     {

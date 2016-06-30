@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.1.7
+Kerbal Joint Reinforcement, v3.2.0
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -119,6 +119,11 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.2.0
+	Features  
+	--Recompile to ensure KSP 1.1.3 compatibility  
+	--Change multi-part-joint system to stabilize space stations and similar vehicles with very large masses connected by very flexy parts  
+
 v3.1.7  
 	Features  
 	--Recompile to ensure KSP 1.1.2 compatibility, especially within CompatibilityChecker utility  
