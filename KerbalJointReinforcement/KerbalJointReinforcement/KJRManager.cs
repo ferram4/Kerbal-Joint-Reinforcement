@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.2.0
+Kerbal Joint Reinforcement, v3.3.0
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -30,18 +30,15 @@ namespace KerbalJointReinforcement
     public class KJRManager : MonoBehaviour
     {
         List<Vessel> updatedVessels;
-        Dictionary<Vessel, int> vesselOffRailsTick;
+        HashSet<Vessel> vesselOffRails;
         Dictionary<Vessel, List<Joint>> vesselJointStrengthened;
         KJRMultiJointManager multiJointManager;
-
-        FloatCurve physicsEasingCurve = new FloatCurve();
-        int numTicksForEasing = 70;
 
         public void Awake()
         {
             KJRJointUtils.LoadConstants();
             updatedVessels = new List<Vessel>();
-            vesselOffRailsTick = new Dictionary<Vessel, int>();
+            vesselOffRails = new HashSet<Vessel>();
             vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
             multiJointManager = new KJRMultiJointManager();
         }
@@ -55,10 +52,6 @@ namespace KerbalJointReinforcement
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
             GameEvents.onVesselDestroy.Add(OnVesselOnRails);
-
-            physicsEasingCurve.Add(numTicksForEasing, 1);
-            physicsEasingCurve.Add(0, 0);
-
         }
 
         public void OnDestroy()
@@ -74,7 +67,7 @@ namespace KerbalJointReinforcement
             if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                 InputLockManager.RemoveControlLock("KJRLoadLock");
             updatedVessels = null;
-            vesselOffRailsTick = null;
+            vesselOffRails = null;
             vesselJointStrengthened = null;
 
             multiJointManager.OnDestroy();
@@ -107,8 +100,33 @@ namespace KerbalJointReinforcement
                 return; 
             
             RunVesselJointUpdateFunction(v);
-            if(!vesselOffRailsTick.ContainsKey(v))
-                vesselOffRailsTick.Add(v, numTicksForEasing);
+            if (!vesselOffRails.Contains(v) && v.precalc.isEasingGravity)
+            {
+                Debug.Log("KJR easing " + v.vesselName);
+                vesselOffRails.Add(v);
+                List<Joint> jointList = new List<Joint>();
+                for (int i = 0; i < v.Parts.Count; ++i)
+                {
+                    Part p = v.Parts[i];
+                    p.crashTolerance = p.crashTolerance * 10000f;
+                    if (p.attachJoint)
+                        p.attachJoint.SetUnbreakable(true, false);
+
+                    Joint[] partJoints = p.GetComponents<Joint>();
+
+                    if (p.Modules.Contains<LaunchClamp>())
+                    {
+                        foreach (Joint j in partJoints)
+                            if (j.connectedBody == null)
+                            {
+                                jointList.Remove(j);
+                                GameObject.Destroy(j);
+                                KJRJointUtils.ConnectLaunchClampToGround(p);
+                                break;
+                            }
+                    }
+                }
+            }
         }
 
         private void OnVesselOnRails(Vessel v)
@@ -118,16 +136,16 @@ namespace KerbalJointReinforcement
 
             if (updatedVessels.Contains(v))
             {
-                if (vesselOffRailsTick.ContainsKey(v))
+                if (vesselOffRails.Contains(v))
                 {
                     foreach (Part p in v.Parts)
                     {
                         p.crashTolerance = p.crashTolerance / 10000;
                         if (p.attachJoint)
-                            p.attachJoint.SetUnbreakable(false);
+                            p.attachJoint.SetUnbreakable(false, false);
                     }
 
-                    vesselOffRailsTick.Remove(v);
+                    vesselOffRails.Remove(v);
                 }
                 vesselJointStrengthened.Remove(v);
                 updatedVessels.Remove(v);
@@ -233,107 +251,19 @@ namespace KerbalJointReinforcement
                 for(int i = 0; i < updatedVessels.Count; ++i)
                 {
                     Vessel v = updatedVessels[i];
-                    if (v == null || !vesselOffRailsTick.ContainsKey(v))
+                    if (v == null || !vesselOffRails.Contains(v))
                         continue;
 
-                    int tick = vesselOffRailsTick[v];
-                    if (tick > 0)
-                    {
-                        float physicsScalingFactor = physicsEasingCurve.Evaluate(tick);
-                        if (tick >= numTicksForEasing)
-                        {
-                            List<Joint> jointList = new List<Joint>();
-                            foreach (Part p in v.Parts)
-                            {
-                                p.crashTolerance = p.crashTolerance * 10000f;
-                                if(p.attachJoint)
-                                    p.attachJoint.SetUnbreakable(true);
-                                
-                                Joint[] partJoints = p.GetComponents<Joint>();
-/*                                foreach (Joint j in partJoints)
-                                {
-//                                    j.breakForce *= 1000000000000000000;
-//                                    j.breakTorque *= 1000000000000000000;
-                                    jointList.Add(j);
-                                    Debug.Log("Part: " + p.partInfo.title + " BreakForce = " + j.breakForce + " BreakTorque = " + j.breakTorque);
-                                }*/
-                                if (p.Modules.Contains<LaunchClamp>())
-                                {
-                                    foreach (Joint j in partJoints)
-                                        if (j.connectedBody == null)
-                                        {
-                                            jointList.Remove(j);
-                                            GameObject.Destroy(j);
-                                            KJRJointUtils.ConnectLaunchClampToGround(p);
-                                            break;
-                                        }
-                                }
-                            }
-                            //vesselJointStrengthened.Add(v, jointList);
-                        }
-                        bool easing = false;
-                        if (v.situation == Vessel.Situations.PRELAUNCH || v.situation == Vessel.Situations.LANDED || v.situation == Vessel.Situations.SPLASHED)
-                            easing = true;
-                        else
-                        {
-                            foreach (Part p in v.Parts)
-                                if (p.Modules.Contains<LaunchClamp>())
-                                {
-                                    easing = true;
-                                    break;
-                                }
-                        }
-                        if (easing)
-                        {
-                            Vector3d vesselPos = v.GetWorldPos3D();
-                            Vector3d vesselVel = v.obt_velocity;
-                            Vector3d vesselAcceleration = FlightGlobals.getGeeForceAtPosition(vesselPos) + FlightGlobals.getCentrifugalAcc(vesselPos, FlightGlobals.currentMainBody) + FlightGlobals.getCoriolisAcc(vesselVel, FlightGlobals.currentMainBody);
-                            vesselAcceleration *= physicsScalingFactor;
-                            foreach (Part p in v.Parts)
-                                if (p.rb)
-                                {
-                                    p.rb.AddForce(-vesselAcceleration * p.rb.mass);
-                                }
-
-                        }
-                        if (v == FlightGlobals.ActiveVessel)
-                        {
-                            if (InputLockManager.GetControlLock("KJRLoadLock") != ControlTypes.ALL_SHIP_CONTROLS)
-                                InputLockManager.SetControlLock(ControlTypes.ALL_SHIP_CONTROLS, "KJRLoadLock");
-                            ScreenMessages.PostScreenMessage("KJR stabilizing physics load...", TimeWarp.fixedDeltaTime, ScreenMessageStyle.UPPER_RIGHT);
-                        }
-                        else
-                            if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
-                                InputLockManager.RemoveControlLock("KJRLoadLock");
-
-                        tick--;
-                        vesselOffRailsTick[v] = tick;
-                    }
-                    else if (tick == 0)
+                    if (!v.precalc.isEasingGravity)
                     {
                         foreach (Part p in v.Parts)
                         {
                             p.crashTolerance = p.crashTolerance / 10000f;
                             if (p.attachJoint)
-                                p.attachJoint.SetUnbreakable(false);
+                                p.attachJoint.SetUnbreakable(false, false);
                         }
 
-                        vesselOffRailsTick.Remove(v);
-                        if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
-                            InputLockManager.RemoveControlLock("KJRLoadLock");
-                    }
-                    else
-                    {
-                        foreach (Part p in v.Parts)
-                        {
-                            p.crashTolerance = p.crashTolerance / 10000f;
-                            if (p.attachJoint)
-                                p.attachJoint.SetUnbreakable(false);
-                        }
-
-                        vesselOffRailsTick.Remove(v);
-                        if (InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
-                            InputLockManager.RemoveControlLock("KJRLoadLock");
+                        vesselOffRails.Remove(v);
                     }
                 }
             }
@@ -355,41 +285,6 @@ namespace KerbalJointReinforcement
                 return;
             }
             List<ConfigurableJoint> jointList;
-            if (p is StrutConnector)
-            {
-                StrutConnector s = p as StrutConnector;
-
-                if (s.jointTarget == null || s.jointRoot == null)
-                    return;
-
-                jointList = KJRJointUtils.GetJointListFromAttachJoint(s.strutJoint);
-
-                if (jointList != null)
-                {
-                    for (int i = 0; i < jointList.Count; i++)
-                    {
-                        ConfigurableJoint j = jointList[i];
-
-                        if (j == null)
-                            continue;
-
-                        JointDrive strutDrive = j.angularXDrive;
-                        strutDrive.positionSpring = KJRJointUtils.decouplerAndClampJointStrength;
-                        strutDrive.maximumForce = KJRJointUtils.decouplerAndClampJointStrength;
-                        j.xDrive = j.yDrive = j.zDrive = j.angularXDrive = j.angularYZDrive = strutDrive;
-
-                        j.xMotion = j.yMotion = j.zMotion = ConfigurableJointMotion.Locked;
-                        j.angularXMotion = j.angularYMotion = j.angularZMotion = ConfigurableJointMotion.Locked;
-
-                        //float scalingFactor = (s.jointTarget.mass + s.jointTarget.GetResourceMass() + s.jointRoot.mass + s.jointRoot.GetResourceMass()) * 0.01f;
-
-                        j.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                        j.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-                    }
-
-                    p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
-                }
-            }
             if (p.Modules.Contains<CModuleStrut>())
             {
                 CModuleStrut s = p.Modules.GetModule<CModuleStrut>();
@@ -435,7 +330,7 @@ namespace KerbalJointReinforcement
 
             bool addAdditionalJointToParent = KJRJointUtils.multiPartAttachNodeReinforcement;
             //addAdditionalJointToParent &= !(p.Modules.Contains("LaunchClamp") || (p.parent.Modules.Contains("ModuleDecouple") || p.parent.Modules.Contains("ModuleAnchoredDecoupler")));
-            addAdditionalJointToParent &= !(p is StrutConnector || p.Modules.Contains<CModuleStrut>());
+            addAdditionalJointToParent &= !p.Modules.Contains<CModuleStrut>();
 
             float partMass = p.mass + p.GetResourceMass();
             for (int i = 0; i < jointList.Count; i++)
@@ -461,8 +356,8 @@ namespace KerbalJointReinforcement
                 }                
                 
                 // Check attachment nodes for better orientation data
-                AttachNode attach = p.findAttachNodeByPart(p.parent);
-                AttachNode p_attach = p.parent.findAttachNodeByPart(p);
+                AttachNode attach = p.FindAttachNodeByPart(p.parent);
+                AttachNode p_attach = p.parent.FindAttachNodeByPart(p);
                 AttachNode node = attach ?? p_attach;
 
                 if (node == null)
@@ -475,8 +370,8 @@ namespace KerbalJointReinforcement
 
                     if (dock1 && dock2 && (dock1.dockedPartUId == p.parent.flightID || dock2.dockedPartUId == p.flightID))
                     {
-                        attach = p.findAttachNode(dock1.referenceAttachNode);
-                        p_attach = p.parent.findAttachNode(dock2.referenceAttachNode);
+                        attach = p.FindAttachNode(dock1.referenceAttachNode);
+                        p_attach = p.parent.FindAttachNode(dock2.referenceAttachNode);
                         node = attach ?? p_attach;
                     }
                 }
@@ -514,35 +409,30 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.xDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.xDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + p.attachJoint.Joint.xDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + p.attachJoint.Joint.xDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Y Drive");
                     debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.yDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.yDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + p.attachJoint.Joint.yDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + p.attachJoint.Joint.yDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Z Drive");
                     debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.zDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.zDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + p.attachJoint.Joint.zDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + p.attachJoint.Joint.zDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Angular X Drive");
                     debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularXDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularXDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularXDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + p.attachJoint.Joint.angularXDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Angular YZ Drive");
                     debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularYZDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularYZDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularYZDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + p.attachJoint.Joint.angularYZDrive.mode);
                     debugString.AppendLine("");
 
 
@@ -887,7 +777,6 @@ namespace KerbalJointReinforcement
                     debugString.AppendLine("Position Spring: " + angDrive.positionSpring);
                     debugString.AppendLine("Position Damper: " + angDrive.positionDamper);
                     debugString.AppendLine("Max Force: " + angDrive.maximumForce);
-                    debugString.AppendLine("Mode: " + angDrive.mode);
                     debugString.AppendLine("");
 
                     debugString.AppendLine("Cross Section Properties");

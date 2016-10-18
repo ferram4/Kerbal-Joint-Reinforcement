@@ -12,16 +12,13 @@ C:\Users\ferram4\Documents\Visual Studio 2010\Projects\jointfix\jointfix\obj\Deb
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\KerbalJointReinforcement.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\KerbalJointReinforcement.pdb
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\Assembly-CSharp.dll
-C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\KSPUtil.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\UnityEngine.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\UnityEngine.UI.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\Assembly-CSharp-firstpass.dll
-C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\SaveUpgradePipeline.Core.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\TrackIRUnity.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\KSPAssets.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\System.Xml.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\Mono.Cecil.dll
-C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\Vectrosity.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\TDx.TDxInput.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\Mono.Security.dll
 C:\Users\ferram4\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Debug\UnityEngine.xml

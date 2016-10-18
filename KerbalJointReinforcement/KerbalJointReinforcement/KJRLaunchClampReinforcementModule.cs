@@ -1,5 +1,5 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.2.0
+Kerbal Joint Reinforcement, v3.3.0
 Copyright 2015, Michael Ferrara, aka Ferram4
 
     This file is part of Kerbal Joint Reinforcement.
@@ -118,7 +118,7 @@ namespace KerbalJointReinforcement
 
                 foreach (Part p in n.vessel.Parts)
                 {
-                    if (p is StrutConnector || p.Modules.Contains<LaunchClamp>())
+                    if (p.Modules.Contains<LaunchClamp>())
                         continue;
 
 
