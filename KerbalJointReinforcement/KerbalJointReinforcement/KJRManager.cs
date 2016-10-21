@@ -199,6 +199,9 @@ namespace KerbalJointReinforcement
                     }
             }
 
+            if (KJRJointUtils.reinforceAttachNodes && KJRJointUtils.multiPartAttachNodeReinforcement)
+                MultiPartJointTreeChildren(v);
+
             if (success || !child_parts)
                 updatedVessels.Add(v);
         }
@@ -207,42 +210,6 @@ namespace KerbalJointReinforcement
         {
             return (p.Modules.Contains<ModuleDecouple>() || p.Modules.Contains<ModuleAnchoredDecoupler>()) && !p.Modules.Contains<KJRDecouplerReinforcementModule>();
         }
-
-/*        public void LateUpdate()
-        {
-            if (!FlightDriver.Pause && FlightGlobals.fetch && FlightGlobals.Vessels != null)
-            {
-                foreach (Vessel v in FlightGlobals.Vessels)
-                {
-                    if (!v.loaded)
-                        continue;
-
-//                    int tick = 0;
-//                    float scalingFactor = 1;
-                    //This scales up the inertia tensor over a few frames rather than trying to initialize with massive inertia tensors
-//                    if (vesselOffRailsTick.TryGetValue(v, out tick))
-//                    {
-//                        scalingFactor = 1 - physicsEasingCurve.Evaluate(tick);
-//                    }
-
-                    //ScreenMessages.PostScreenMessage("Scaling Factor: " + scalingFactor, TimeWarp.deltaTime, ScreenMessageStyle.UPPER_LEFT);
-                    
-                    foreach (Part p in v.Parts)
-                    {
-                        //if (p.Modules.Contains("LaunchClamp"))
-                        //    continue;
-                        // This relies on KSP resetting the tensors to a constant in Update
-                        if (p.started && p.State != PartStates.DEAD && p.rb)
-                        {
-                            float mass = p.rb.mass;// *scalingFactor;
-
-                            if (mass > 1f)
-                                p.rb.inertiaTensor *= mass;
-                        }
-                    }
-                }
-            }
-        }*/
 
         public void FixedUpdate()
         {
@@ -699,7 +666,7 @@ namespace KerbalJointReinforcement
                             multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
                     }
 
-                    if(p.symmetryCounterparts != null && p.symmetryCounterparts.Count > 0)
+                    /*if(p.symmetryCounterparts != null && p.symmetryCounterparts.Count > 0)
                     {
                         Part linkPart = null;
                         Vector3 center = p.transform.position;
@@ -745,7 +712,7 @@ namespace KerbalJointReinforcement
                             multiJointManager.RegisterMultiJoint(p, newJoint);
                             multiJointManager.RegisterMultiJoint(linkPart, newJoint);
                         }
-                    }
+                    }*/
                 }
 
                 if (KJRJointUtils.debug)
@@ -788,6 +755,70 @@ namespace KerbalJointReinforcement
             }
             if (KJRJointUtils.debug)
                 Debug.Log(debugString.ToString());
+        }
+
+        void MultiPartJointTreeChildren(Vessel v)
+        {
+            if (v.Parts.Count <= 1)
+                return;
+
+            List<Part> childPartsToConnect = new List<Part>();
+
+            for(int i = 0; i < v.Parts.Count; ++i)
+            {
+                Part p = v.Parts[i];
+                if (p.children.Count == 0 && KJRJointUtils.MaximumPossiblePartMass(p) > KJRJointUtils.massForAdjustment)
+                    childPartsToConnect.Add(p);
+            }
+
+            Rigidbody rootRb = v.rootPart.Rigidbody;
+
+            for(int i = 0; i < childPartsToConnect.Count; ++i)
+            {
+                Part p = childPartsToConnect[i];
+                Part linkPart = childPartsToConnect[i >= childPartsToConnect.Count ? 0 : i + 1];
+
+                Rigidbody rigidBody = linkPart.Rigidbody;
+                if (!p.Rigidbody || !rigidBody || p.Rigidbody == rigidBody)
+                    continue;
+
+                ConfigurableJoint betweenChildJoint;
+
+                betweenChildJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                betweenChildJoint.connectedBody = rigidBody;
+                betweenChildJoint.anchor = Vector3.zero;
+                betweenChildJoint.axis = Vector3.right;
+                betweenChildJoint.secondaryAxis = Vector3.forward;
+                betweenChildJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                betweenChildJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+                betweenChildJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
+                betweenChildJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
+                multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
+
+                if (!rootRb || p.Rigidbody == rootRb)
+                    continue;
+
+                ConfigurableJoint toRootJoint;
+
+                toRootJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                toRootJoint.connectedBody = rootRb;
+                toRootJoint.anchor = Vector3.zero;
+                toRootJoint.axis = Vector3.right;
+                toRootJoint.secondaryAxis = Vector3.forward;
+                toRootJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                toRootJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+                toRootJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
+                toRootJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                multiJointManager.RegisterMultiJoint(p, toRootJoint);
+                multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
+            }
         }
     }
 }
