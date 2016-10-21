@@ -771,12 +771,13 @@ namespace KerbalJointReinforcement
                     childPartsToConnect.Add(p);
             }
 
+
             Rigidbody rootRb = v.rootPart.Rigidbody;
 
             for(int i = 0; i < childPartsToConnect.Count; ++i)
             {
                 Part p = childPartsToConnect[i];
-                Part linkPart = childPartsToConnect[i >= childPartsToConnect.Count ? 0 : i + 1];
+                Part linkPart = childPartsToConnect[i + 1 >= childPartsToConnect.Count ? 0 : i + 1];
 
                 Rigidbody rigidBody = linkPart.Rigidbody;
                 if (!p.Rigidbody || !rigidBody || p.Rigidbody == rigidBody)
