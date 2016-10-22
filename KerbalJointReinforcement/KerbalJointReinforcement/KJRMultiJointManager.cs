@@ -51,11 +51,19 @@ namespace KerbalJointReinforcement
         }
         
         //This entire scheme relies on a simple fact: when a vessel is created, the part that was decoupled is the root part
-        //Therefore, we only need to use vessel.RootPart
+        //Therefore, we only need to use vessel.RootPart and the parts with no children to ensure that all multijoints are broken
         private void VesselCreate(Vessel v)
         {
             //Debug.Log(v.name + " joint break");
             OnJointBreak(v.rootPart);
+
+            for(int i = 0; i < v.Parts.Count; ++i)
+            {
+                Part p = v.Parts[i];
+                if (p.children.Count > 0)
+                    continue;
+                OnJointBreak(p);
+            }
         }
 
         public void RegisterMultiJoint(Part testPart, ConfigurableJoint multiJoint)

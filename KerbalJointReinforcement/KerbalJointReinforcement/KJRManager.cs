@@ -757,7 +757,7 @@ namespace KerbalJointReinforcement
                 Debug.Log(debugString.ToString());
         }
 
-        void MultiPartJointTreeChildren(Vessel v)
+        public void MultiPartJointTreeChildren(Vessel v)
         {
             if (v.Parts.Count <= 1)
                 return;
@@ -799,6 +799,32 @@ namespace KerbalJointReinforcement
 
                 multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
                 multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
+
+                Part linkPart2;
+
+                int part2Index = i + childPartsToConnect.Count / 2;
+                if (part2Index >= childPartsToConnect.Count)
+                    part2Index -= childPartsToConnect.Count;
+
+                linkPart2 = childPartsToConnect[part2Index];
+
+                ConfigurableJoint betweenChildJoint2;
+
+                betweenChildJoint2 = p.gameObject.AddComponent<ConfigurableJoint>();
+
+                betweenChildJoint2.connectedBody = rigidBody;
+                betweenChildJoint2.anchor = Vector3.zero;
+                betweenChildJoint2.axis = Vector3.right;
+                betweenChildJoint2.secondaryAxis = Vector3.forward;
+                betweenChildJoint2.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                betweenChildJoint2.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+                betweenChildJoint2.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
+                betweenChildJoint2.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                multiJointManager.RegisterMultiJoint(p, betweenChildJoint2);
+                multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint2);
+
 
                 if (!rootRb || p.Rigidbody == rootRb)
                     continue;
