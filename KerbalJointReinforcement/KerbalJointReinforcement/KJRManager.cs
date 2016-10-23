@@ -797,8 +797,9 @@ namespace KerbalJointReinforcement
                 betweenChildJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
                 betweenChildJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
-                multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
-                multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
+                multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, betweenChildJoint);
+                //multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
+                //multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
 
                 Part linkPart2;
 
@@ -807,6 +808,10 @@ namespace KerbalJointReinforcement
                     part2Index -= childPartsToConnect.Count;
 
                 linkPart2 = childPartsToConnect[part2Index];
+                rigidBody = linkPart2.Rigidbody;
+
+                if (!p.Rigidbody || !rigidBody || p.Rigidbody == rigidBody)
+                    continue;
 
                 ConfigurableJoint betweenChildJoint2;
 
@@ -819,11 +824,12 @@ namespace KerbalJointReinforcement
                 betweenChildJoint2.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
                 betweenChildJoint2.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
 
-                betweenChildJoint2.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
-                betweenChildJoint2.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                betweenChildJoint2.xMotion = betweenChildJoint2.yMotion = betweenChildJoint2.zMotion = ConfigurableJointMotion.Locked;
+                betweenChildJoint2.angularXMotion = betweenChildJoint2.angularYMotion = betweenChildJoint2.angularZMotion = ConfigurableJointMotion.Locked;
 
-                multiJointManager.RegisterMultiJoint(p, betweenChildJoint2);
-                multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint2);
+                multiJointManager.RegisterMultiJointBetweenParts(p, linkPart2, betweenChildJoint2);
+                //multiJointManager.RegisterMultiJoint(p, betweenChildJoint2);
+                //multiJointManager.RegisterMultiJoint(linkPart2, betweenChildJoint2);
 
 
                 if (!rootRb || p.Rigidbody == rootRb)
@@ -843,8 +849,9 @@ namespace KerbalJointReinforcement
                 toRootJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
                 toRootJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
-                multiJointManager.RegisterMultiJoint(p, toRootJoint);
-                multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
+                multiJointManager.RegisterMultiJointBetweenParts(p, v.rootPart, toRootJoint);
+                //multiJointManager.RegisterMultiJoint(p, toRootJoint);
+                //multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
             }
         }
     }
