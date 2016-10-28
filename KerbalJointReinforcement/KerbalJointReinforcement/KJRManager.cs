@@ -767,8 +767,14 @@ namespace KerbalJointReinforcement
             for(int i = 0; i < v.Parts.Count; ++i)
             {
                 Part p = v.Parts[i];
-                if (p.children.Count == 0 && KJRJointUtils.MaximumPossiblePartMass(p) > KJRJointUtils.massForAdjustment)
+                if (p.children.Count == 0 && !p.Modules.Contains("LaunchClamp") && KJRJointUtils.MaximumPossiblePartMass(p) > KJRJointUtils.massForAdjustment)
+                {
+                    if(p.rb == null && p.Rigidbody != null)
+                    {
+                        p = p.RigidBodyPart;
+                    }
                     childPartsToConnect.Add(p);
+                }
             }
 
 
@@ -780,26 +786,29 @@ namespace KerbalJointReinforcement
                 Part linkPart = childPartsToConnect[i + 1 >= childPartsToConnect.Count ? 0 : i + 1];
 
                 Rigidbody rigidBody = linkPart.Rigidbody;
-                if (!p.Rigidbody || !rigidBody || p.Rigidbody == rigidBody)
+                if (!p.rb || !rigidBody || p.rb == rigidBody)
                     continue;
 
-                ConfigurableJoint betweenChildJoint;
+                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart))
+                {
+                    ConfigurableJoint betweenChildJoint;
 
-                betweenChildJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+                    betweenChildJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
-                betweenChildJoint.connectedBody = rigidBody;
-                betweenChildJoint.anchor = Vector3.zero;
-                betweenChildJoint.axis = Vector3.right;
-                betweenChildJoint.secondaryAxis = Vector3.forward;
-                betweenChildJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                betweenChildJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+                    betweenChildJoint.connectedBody = rigidBody;
+                    betweenChildJoint.anchor = Vector3.zero;
+                    betweenChildJoint.axis = Vector3.right;
+                    betweenChildJoint.secondaryAxis = Vector3.forward;
+                    betweenChildJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                    betweenChildJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
 
-                betweenChildJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
-                betweenChildJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                    betweenChildJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
+                    betweenChildJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
-                multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, betweenChildJoint);
-                //multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
-                //multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
+                    multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, betweenChildJoint);
+                    //multiJointManager.RegisterMultiJoint(p, betweenChildJoint);
+                    //multiJointManager.RegisterMultiJoint(linkPart, betweenChildJoint);
+                }
 
                 Part linkPart2;
 
@@ -810,48 +819,55 @@ namespace KerbalJointReinforcement
                 linkPart2 = childPartsToConnect[part2Index];
                 rigidBody = linkPart2.Rigidbody;
 
-                if (!p.Rigidbody || !rigidBody || p.Rigidbody == rigidBody)
+                if (!p.rb || !rigidBody || p.rb == rigidBody)
                     continue;
 
-                ConfigurableJoint betweenChildJoint2;
+                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart2))
+                {
+                    ConfigurableJoint betweenChildJoint2;
 
-                betweenChildJoint2 = p.gameObject.AddComponent<ConfigurableJoint>();
+                    betweenChildJoint2 = p.gameObject.AddComponent<ConfigurableJoint>();
 
-                betweenChildJoint2.connectedBody = rigidBody;
-                betweenChildJoint2.anchor = Vector3.zero;
-                betweenChildJoint2.axis = Vector3.right;
-                betweenChildJoint2.secondaryAxis = Vector3.forward;
-                betweenChildJoint2.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                betweenChildJoint2.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+                    betweenChildJoint2.connectedBody = rigidBody;
+                    betweenChildJoint2.anchor = Vector3.zero;
+                    betweenChildJoint2.axis = Vector3.right;
+                    betweenChildJoint2.secondaryAxis = Vector3.forward;
+                    betweenChildJoint2.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                    betweenChildJoint2.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
 
-                betweenChildJoint2.xMotion = betweenChildJoint2.yMotion = betweenChildJoint2.zMotion = ConfigurableJointMotion.Locked;
-                betweenChildJoint2.angularXMotion = betweenChildJoint2.angularYMotion = betweenChildJoint2.angularZMotion = ConfigurableJointMotion.Locked;
+                    betweenChildJoint2.xMotion = betweenChildJoint2.yMotion = betweenChildJoint2.zMotion = ConfigurableJointMotion.Locked;
+                    betweenChildJoint2.angularXMotion = betweenChildJoint2.angularYMotion = betweenChildJoint2.angularZMotion = ConfigurableJointMotion.Locked;
 
-                multiJointManager.RegisterMultiJointBetweenParts(p, linkPart2, betweenChildJoint2);
-                //multiJointManager.RegisterMultiJoint(p, betweenChildJoint2);
-                //multiJointManager.RegisterMultiJoint(linkPart2, betweenChildJoint2);
+                    multiJointManager.RegisterMultiJointBetweenParts(p, linkPart2, betweenChildJoint2);
+                    //multiJointManager.RegisterMultiJoint(p, betweenChildJoint2);
+                    //multiJointManager.RegisterMultiJoint(linkPart2, betweenChildJoint2);
+                }
 
 
-                if (!rootRb || p.Rigidbody == rootRb)
+                if (!rootRb || p.rb == rootRb)
                     continue;
 
-                ConfigurableJoint toRootJoint;
+                if (multiJointManager.CheckMultiJointBetweenParts(p, v.rootPart))
+                {
 
-                toRootJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+                    ConfigurableJoint toRootJoint;
 
-                toRootJoint.connectedBody = rootRb;
-                toRootJoint.anchor = Vector3.zero;
-                toRootJoint.axis = Vector3.right;
-                toRootJoint.secondaryAxis = Vector3.forward;
-                toRootJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-                toRootJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+                    toRootJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
-                toRootJoint.xMotion = betweenChildJoint.yMotion = betweenChildJoint.zMotion = ConfigurableJointMotion.Locked;
-                toRootJoint.angularXMotion = betweenChildJoint.angularYMotion = betweenChildJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                    toRootJoint.connectedBody = rootRb;
+                    toRootJoint.anchor = Vector3.zero;
+                    toRootJoint.axis = Vector3.right;
+                    toRootJoint.secondaryAxis = Vector3.forward;
+                    toRootJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+                    toRootJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
 
-                multiJointManager.RegisterMultiJointBetweenParts(p, v.rootPart, toRootJoint);
-                //multiJointManager.RegisterMultiJoint(p, toRootJoint);
-                //multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
+                    toRootJoint.xMotion = toRootJoint.yMotion = toRootJoint.zMotion = ConfigurableJointMotion.Locked;
+                    toRootJoint.angularXMotion = toRootJoint.angularYMotion = toRootJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                    multiJointManager.RegisterMultiJointBetweenParts(p, v.rootPart, toRootJoint);
+                    //multiJointManager.RegisterMultiJoint(p, toRootJoint);
+                    //multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
+                }
             }
         }
     }
