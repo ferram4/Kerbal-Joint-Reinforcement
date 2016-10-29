@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.3.0
+Kerbal Joint Reinforcement, v3.3.1
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -119,6 +119,10 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+v3.3.1  
+	Bugfixes  
+	--Fix a critical bug involving unphysical forces applied to vessels on load / unload of other vessels and SOI switches  
+
 v3.3.0  
 	Features  
 	--Recompile to fix for KSP 1.2  
