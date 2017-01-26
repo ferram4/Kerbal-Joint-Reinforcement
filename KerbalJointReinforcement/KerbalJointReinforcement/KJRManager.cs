@@ -789,7 +789,7 @@ namespace KerbalJointReinforcement
                 if (!p.rb || !rigidBody || p.rb == rigidBody)
                     continue;
 
-                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart))
+                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart) && multiJointManager.TrySetValidLinkedSet(p, linkPart))
                 {
                     ConfigurableJoint betweenChildJoint;
 
@@ -822,7 +822,7 @@ namespace KerbalJointReinforcement
                 if (!p.rb || !rigidBody || p.rb == rigidBody)
                     continue;
 
-                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart2))
+                if (!multiJointManager.CheckMultiJointBetweenParts(p, linkPart2) && multiJointManager.TrySetValidLinkedSet(p, linkPart2))
                 {
                     ConfigurableJoint betweenChildJoint2;
 
@@ -847,7 +847,7 @@ namespace KerbalJointReinforcement
                 if (!rootRb || p.rb == rootRb)
                     continue;
 
-                if (multiJointManager.CheckMultiJointBetweenParts(p, v.rootPart))
+                if (multiJointManager.CheckMultiJointBetweenParts(p, v.rootPart) && multiJointManager.TrySetValidLinkedSet(p, v.rootPart))
                 {
 
                     ConfigurableJoint toRootJoint;

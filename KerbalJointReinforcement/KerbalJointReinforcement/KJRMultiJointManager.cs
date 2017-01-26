@@ -70,18 +70,21 @@ namespace KerbalJointReinforcement
             }
         }
 
-        public void RegisterMultiJointBetweenParts(Part linkPart1, Part linkPart2, ConfigurableJoint multiJoint)
+        public bool TrySetValidLinkedSet(Part linkPart1, Part linkPart2)
         {
             linkPart1List.Clear();
             linkPart2List.Clear();
             linkedSet.Clear();
+
+            if (!KJRJointUtils.JointAdjustmentValid(linkPart1) || !KJRJointUtils.JointAdjustmentValid(linkPart2))
+                return false;
 
             //Add the parts we're connecting to their respective lists
             linkPart1List.Add(linkPart1);
             linkPart2List.Add(linkPart2);
 
             //iterate through each part's parents, making them the new linkPart and then adding them to their respective lists.  LinkPart.parent will not be null until it reaches the root part
-            while((object)linkPart1.parent != null)
+            while ((object)linkPart1.parent != null)
             {
                 linkPart1 = linkPart1.parent;
                 linkPart1List.Add(linkPart1);
@@ -103,9 +106,9 @@ namespace KerbalJointReinforcement
                 Part p = null, q = null;
 
                 //if the indices are valid, get those particular parts
-                if(index1 >= 0)
+                if (index1 >= 0)
                     p = linkPart1List[index1];
-                if(index2 >= 0)
+                if (index2 >= 0)
                     q = linkPart2List[index2];
 
                 //decrement indices for next iteration
@@ -121,16 +124,31 @@ namespace KerbalJointReinforcement
                     continue;
 
                 //if we have reached the merge, all the remaining parts are parts of the line connecting these parts and should be set to be disconnected
-                if((object)p != null)
-                    linkedSet.Add(p);
-                if((object)q != null)
-                    linkedSet.Add(q);
+                if ((object)p != null)
+                {
+                    if (KJRJointUtils.JointAdjustmentValid(p))
+                        linkedSet.Add(p);
+                    else
+                        return false;
+                }
+                if ((object)q != null)
+                {
+                    if (KJRJointUtils.JointAdjustmentValid(q))
+                        linkedSet.Add(q);
+                    else
+                        return false;
+                }
 
                 //if both p and q are null, that means we've reached the end of both lines and so all the parts have been added
                 if ((object)p == null && (object)q == null)
                     break;
             }
 
+            return true;
+        }
+
+        public void RegisterMultiJointBetweenParts(Part linkPart1, Part linkPart2, ConfigurableJoint multiJoint)
+        {
             foreach (Part p in linkedSet)
                 RegisterMultiJoint(p, multiJoint);
         }
