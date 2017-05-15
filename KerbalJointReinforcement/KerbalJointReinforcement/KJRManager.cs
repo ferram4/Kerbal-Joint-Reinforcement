@@ -298,7 +298,10 @@ namespace KerbalJointReinforcement
             bool addAdditionalJointToParent = KJRJointUtils.multiPartAttachNodeReinforcement;
             //addAdditionalJointToParent &= !(p.Modules.Contains("LaunchClamp") || (p.parent.Modules.Contains("ModuleDecouple") || p.parent.Modules.Contains("ModuleAnchoredDecoupler")));
             addAdditionalJointToParent &= !p.Modules.Contains<CModuleStrut>();
-
+            // Check if part should be exempt from multiple joints.
+			foreach (string moduleToCheck in KJRJointUtils.exemptModuleTypesFromMultiR)
+				addAdditionalJointToParent &= !p.Modules.Contains(moduleToCheck);
+				
             float partMass = p.mass + p.GetResourceMass();
             for (int i = 0; i < jointList.Count; i++)
             {

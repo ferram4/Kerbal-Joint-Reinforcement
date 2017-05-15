@@ -23,6 +23,9 @@
 
     <string name="exemptPartType0">MuMechToggle</string>
     <string name="exemptPartType1">MuMechServo</string>
+	
+    <string name="exemptModuleFromMultType0">MuMechToggle</string>
+    <string name="exemptModuleFromMultType1">MuMechServo</string>
 
     <string name="exemptModuleType0">WingManipulator</string>
     <string name="exemptModuleType1">SingleGroupMan</string>
