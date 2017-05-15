@@ -58,6 +58,7 @@ namespace KerbalJointReinforcement
         public static List<string> exemptPartTypes = new List<string>();
         public static List<string> exemptModuleTypes = new List<string>();
         public static List<string> decouplerStiffeningExtensionType = new List<string>();
+        public static List<string> exemptModuleTypesFromMultiR = new List<string>();
 
         public static float massForAdjustment = 0.001f;
 
@@ -277,16 +278,18 @@ namespace KerbalJointReinforcement
             exemptPartTypes.Clear();
             exemptModuleTypes.Clear();
             decouplerStiffeningExtensionType.Clear();
+            exemptModuleTypesFromMultiR.Clear();
 
             int i = 0;
             do
             {
-                string tmpPart, tmpModule, tmpDecoupler;
+                string tmpPart, tmpModule, tmpDecoupler, tmpModuleMoMultR;
                 tmpPart = config.GetValue("exemptPartType" + i, "");
                 tmpModule = config.GetValue("exemptModuleType" + i, "");
                 tmpDecoupler = config.GetValue("decouplerStiffeningExtensionType" + i, "");
+                tmpModuleMoMultR = config.GetValue("exemptModuleFromMultType" + i, "");
 
-                if (tmpPart == "" && tmpModule == "" && tmpDecoupler == "")
+                if (tmpPart == "" && tmpModule == "" && tmpDecoupler == "" && tmpModuleMoMultR == "")
                     break;
 
                 if (tmpPart != "")
@@ -295,6 +298,8 @@ namespace KerbalJointReinforcement
                     exemptModuleTypes.Add(tmpModule);
                 if (tmpDecoupler != "")
                     decouplerStiffeningExtensionType.Add(tmpDecoupler);
+                if (tmpModuleMoMultR != "")
+                	exemptModuleTypesFromMultiR.Add(tmpModuleMoMultR);
 
                 i++;
             } while (true);
@@ -326,6 +331,10 @@ namespace KerbalJointReinforcement
 
                 debugString.AppendLine("\n\rExempt Module Types");
                 foreach (string s in exemptModuleTypes)
+                    debugString.AppendLine(s);
+                
+                debugString.AppendLine("\n\rExempt from Multi Part Reinforcement Module Types");
+                foreach (string s in exemptModuleTypesFromMultiR)
                     debugString.AppendLine(s);
 
                 debugString.AppendLine("\n\rDecoupler Stiffening Extension Types");
