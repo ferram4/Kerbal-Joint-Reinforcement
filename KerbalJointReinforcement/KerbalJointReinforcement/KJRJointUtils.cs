@@ -82,6 +82,9 @@ namespace KerbalJointReinforcement
 
         public static bool JointAdjustmentValid(Part p)
         {
+			if(p.GetComponent<IKJRaware>() != null)
+				return false;
+
             foreach (string s in exemptPartTypes)
                 if (p.GetType().ToString() == s)
                     return false;
