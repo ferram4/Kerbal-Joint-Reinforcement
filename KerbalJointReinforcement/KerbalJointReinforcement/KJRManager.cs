@@ -568,7 +568,7 @@ namespace KerbalJointReinforcement
                 if (addAdditionalJointToParent && p.parent.parent != null)
                 {
                     addAdditionalJointToParent = false;
-                    if (!KJRJointUtils.JointAdjustmentValid(p.parent) || !KJRJointUtils.JointAdjustmentValid(p.parent.parent))
+                    if (!KJRJointUtils.JointAdjustmentValid(p.parent)) // || !KJRJointUtils.JointAdjustmentValid(p.parent.parent))
                         continue;
 
                     /*if (ValidDecoupler(p) || ValidDecoupler(p.parent))
@@ -778,8 +778,6 @@ namespace KerbalJointReinforcement
             }
 
 
-            Rigidbody rootRb = v.rootPart.Rigidbody;
-
             for(int i = 0; i < childPartsToConnect.Count; ++i)
             {
                 Part p = childPartsToConnect[i];
@@ -843,18 +841,21 @@ namespace KerbalJointReinforcement
                     //multiJointManager.RegisterMultiJoint(linkPart2, betweenChildJoint2);
                 }
 
+				Part rootPart = v.rootPart;
 
-                if (!rootRb || p.rb == rootRb)
-                    continue;
+				while(rootPart.parent && KJRJointUtils.JointAdjustmentValid(rootPart))
+					rootPart = rootPart.parent;
 
-                if (multiJointManager.CheckMultiJointBetweenParts(p, v.rootPart) && multiJointManager.TrySetValidLinkedSet(p, v.rootPart))
+				if(!rootPart.Rigidbody || p.rb == rootPart.Rigidbody)
+					continue;
+
+				if(multiJointManager.CheckMultiJointBetweenParts(p, rootPart) && multiJointManager.TrySetValidLinkedSet(p, rootPart))
                 {
-
                     ConfigurableJoint toRootJoint;
 
                     toRootJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
-                    toRootJoint.connectedBody = rootRb;
+                    toRootJoint.connectedBody = rootPart.Rigidbody;
                     toRootJoint.anchor = Vector3.zero;
                     toRootJoint.axis = Vector3.right;
                     toRootJoint.secondaryAxis = Vector3.forward;
@@ -864,7 +865,7 @@ namespace KerbalJointReinforcement
                     toRootJoint.xMotion = toRootJoint.yMotion = toRootJoint.zMotion = ConfigurableJointMotion.Locked;
                     toRootJoint.angularXMotion = toRootJoint.angularYMotion = toRootJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
-                    multiJointManager.RegisterMultiJointBetweenParts(p, v.rootPart, toRootJoint);
+                    multiJointManager.RegisterMultiJointBetweenParts(p, rootPart, toRootJoint);
                     //multiJointManager.RegisterMultiJoint(p, toRootJoint);
                     //multiJointManager.RegisterMultiJoint(v.rootPart, toRootJoint);
                 }

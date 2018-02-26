@@ -34,14 +34,14 @@ namespace KerbalJointReinforcement
         Dictionary<Part, List<ConfigurableJoint>> multiJointDict;
         List<Part> linkPart1List;
         List<Part> linkPart2List;
-        HashSet<Part> linkedSet;
+		List<Part> linkedSet;
 
         public KJRMultiJointManager()
         {
             multiJointDict = new Dictionary<Part, List<ConfigurableJoint>>();
             linkPart1List = new List<Part>();
             linkPart2List = new List<Part>();
-            linkedSet = new HashSet<Part>();
+            linkedSet = new List<Part>();
             fetch = this;
             GameEvents.onVesselCreate.Add(VesselCreate);
             GameEvents.onPartUndock.Add(OnJointBreak);
@@ -70,82 +70,38 @@ namespace KerbalJointReinforcement
             }
         }
 
-        public bool TrySetValidLinkedSet(Part linkPart1, Part linkPart2)
-        {
-            linkPart1List.Clear();
-            linkPart2List.Clear();
-            linkedSet.Clear();
+		public bool TrySetValidLinkedSet(Part linkPart1, Part linkPart2)
+		{
+			linkPart1List.Clear();
+			linkPart2List.Clear();
+			linkedSet.Clear();
 
-            if (!KJRJointUtils.JointAdjustmentValid(linkPart1) || !KJRJointUtils.JointAdjustmentValid(linkPart2))
-                return false;
+			while(linkPart1 != null)
+			{
+				linkPart1List.Add(linkPart1);
+				linkPart1 = KJRJointUtils.JointAdjustmentValid(linkPart1) ? linkPart1.parent : null;
+			}
 
-            //Add the parts we're connecting to their respective lists
-            linkPart1List.Add(linkPart1);
-            linkPart2List.Add(linkPart2);
+			while(linkPart2 != null)
+			{
+				linkPart2List.Add(linkPart2);
+				linkPart2 = KJRJointUtils.JointAdjustmentValid(linkPart2) ? linkPart2.parent : null;
+			}
 
-            //iterate through each part's parents, making them the new linkPart and then adding them to their respective lists.  LinkPart.parent will not be null until it reaches the root part
-            while ((object)linkPart1.parent != null)
-            {
-                linkPart1 = linkPart1.parent;
-                linkPart1List.Add(linkPart1);
-            }
-            while ((object)linkPart2.parent != null)
-            {
-                linkPart2 = linkPart2.parent;
-                linkPart2List.Add(linkPart2);
-            }
+			int index1 = linkPart1List.Count - 1;
+			int index2 = linkPart2List.Count - 1;
 
-            int index1, index2;
-            index1 = linkPart1List.Count - 1;
-            index2 = linkPart2List.Count - 1;
-            bool reachedMergeNode = false;
+			if(linkPart1List[index1] != linkPart2List[index2])
+				return false; // not same root, so they can never be in a valid set
 
-            //Start iterating through the lists, starting from the last indices.  Due to the way the lists were created, index 0 = connected part, while index = Count - 1 = root part
-            while (true)
-            {
-                Part p = null, q = null;
+			while((index1 >= 0) && (index2 >= 0) && (linkPart1List[index1] == linkPart2List[index2]))
+			{ --index1; --index2; }
 
-                //if the indices are valid, get those particular parts
-                if (index1 >= 0)
-                    p = linkPart1List[index1];
-                if (index2 >= 0)
-                    q = linkPart2List[index2];
+			linkedSet.AddRange(linkPart1List);
+			linkedSet.AddRange(linkPart2List.GetRange(0, index2 + 1)); 
 
-                //decrement indices for next iteration
-                index1--;
-                index2--;
-
-                //if p and q are the same, this is the merge we care about; set variable noting this now
-                if (p == q)
-                    reachedMergeNode = true;
-
-                //if we haven't reached the merge yet, go back to the beginning of the loop
-                if (!reachedMergeNode)
-                    continue;
-
-                //if we have reached the merge, all the remaining parts are parts of the line connecting these parts and should be set to be disconnected
-                if ((object)p != null)
-                {
-                    if (KJRJointUtils.JointAdjustmentValid(p))
-                        linkedSet.Add(p);
-                    else
-                        return false;
-                }
-                if ((object)q != null)
-                {
-                    if (KJRJointUtils.JointAdjustmentValid(q))
-                        linkedSet.Add(q);
-                    else
-                        return false;
-                }
-
-                //if both p and q are null, that means we've reached the end of both lines and so all the parts have been added
-                if ((object)p == null && (object)q == null)
-                    break;
-            }
-
-            return true;
-        }
+			return linkedSet.Count > 1;
+		}
 
         public void RegisterMultiJointBetweenParts(Part linkPart1, Part linkPart2, ConfigurableJoint multiJoint)
         {
