@@ -8,8 +8,8 @@
   },
   "VERSION" : {
     "MAJOR" : 3,
-    "MINOR" : 3,
-    "PATCH" : 3
+    "MINOR" : 4,
+    "PATCH" : 0
   },
   "KSP_VERSION_MIN" : {
     "MAJOR" : 1,

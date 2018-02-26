@@ -1,2 +1,6 @@
-/KerbalJointReinforcement/KerbalJointReinforcement/bin/*
-/KerbalJointReinforcement/KerbalJointReinforcement/obj/Debug/*
+/KerbalJointReinforcement/KerbalJointReinforcement/bin/
+/KerbalJointReinforcement/KerbalJointReinforcement/obj/
+/KerbalJointReinforcement/KerbalJointReinforcement_Redist/bin/
+/KerbalJointReinforcement/KerbalJointReinforcement_Redist/obj/
+/KerbalJointReinforcement/KerbalJointReinforcement.suo
+/KerbalJointReinforcement/KerbalJointReinforcement.v12.suo

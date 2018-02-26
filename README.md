@@ -119,6 +119,12 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+
+v3.4.0
+	Features
+	--IKJRaware interface adds possibility for mods to inform KJR about parts that need to be excluded from reinforcing
+	--Fix in multiple functions for better results
+
 v3.3.3  
 	Features  
 	--Recompile against KSP 1.3, ensure CompatChecker compatibility with 1.3  
