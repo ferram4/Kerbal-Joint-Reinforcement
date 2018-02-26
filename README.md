@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.3.3
+Kerbal Joint Reinforcement, v3.4.0
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
