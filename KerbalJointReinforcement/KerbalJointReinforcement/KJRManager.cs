@@ -780,7 +780,7 @@ namespace KerbalJointReinforcement
 			if(v.Parts.Count <= 1)
 				return;
 
-			List<Part> childPartsToConnect = new List<Part>();
+			Dictionary<Part, List<Part>> childPartsToConnectByRoot = new Dictionary<Part,List<Part>>();
 
 			for(int i = 0; i < v.Parts.Count; ++i)
 			{
@@ -805,46 +805,57 @@ namespace KerbalJointReinforcement
 					if(p.rb == null && p.Rigidbody != null)
 						p = p.RigidBodyPart;
 
+					Part root = p;
+					while(root.parent && KJRJointUtils.JointAdjustmentValid(root))
+						root = root.parent;
+
+					List<Part> childPartsToConnect;
+					if(!childPartsToConnectByRoot.TryGetValue(root, out childPartsToConnect))
+					{
+						childPartsToConnect = new List<Part>();
+						childPartsToConnectByRoot.Add(root, childPartsToConnect);
+					}
+
 					childPartsToConnect.Add(p);
 				}
 			}
 
-			for(int i = 0; i < childPartsToConnect.Count; ++i)
+			foreach(Part root in childPartsToConnectByRoot.Keys)
 			{
-				Part p = childPartsToConnect[i];
+				List<Part> childPartsToConnect = childPartsToConnectByRoot[root];
 
-				if(!p.rb)
-					continue;
+				for(int i = 0; i < childPartsToConnect.Count; ++i)
+				{
+					Part p = childPartsToConnect[i];
 
-				Part linkPart = childPartsToConnect[i + 1 >= childPartsToConnect.Count ? 0 : i + 1];
+					if(!p.rb)
+						continue;
 
-				if(!linkPart.Rigidbody || p.rb == linkPart.Rigidbody)
-					continue;
+					Part linkPart = childPartsToConnect[i + 1 >= childPartsToConnect.Count ? 0 : i + 1];
 
-				BuildJoint(p, linkPart);
+					if(!linkPart.Rigidbody || p.rb == linkPart.Rigidbody)
+						continue;
 
-
-				int part2Index = i + childPartsToConnect.Count / 2;
-				if(part2Index >= childPartsToConnect.Count)
-					part2Index -= childPartsToConnect.Count;
-
-				Part linkPart2 = childPartsToConnect[part2Index];
-
-				if(!linkPart2.Rigidbody || p.rb == linkPart2.Rigidbody)
-					continue;
-
-				BuildJoint(p, linkPart2);
+					BuildJoint(p, linkPart);
 
 
-				Part rootPart = v.rootPart;
+					int part2Index = i + childPartsToConnect.Count / 2;
+					if(part2Index >= childPartsToConnect.Count)
+						part2Index -= childPartsToConnect.Count;
 
-				while(rootPart.parent && KJRJointUtils.JointAdjustmentValid(rootPart))
-					rootPart = rootPart.parent;
+					Part linkPart2 = childPartsToConnect[part2Index];
 
-				if(!rootPart.Rigidbody || p.rb == rootPart.Rigidbody)
-					continue;
+					if(!linkPart2.Rigidbody || p.rb == linkPart2.Rigidbody)
+						continue;
 
-				BuildJoint(p, rootPart);
+					BuildJoint(p, linkPart2);
+
+
+					if(!root.Rigidbody || p.rb == root.Rigidbody)
+						continue;
+
+					BuildJoint(p, root);
+				}
 			}
 		}
 	}
