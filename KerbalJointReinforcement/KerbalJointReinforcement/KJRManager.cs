@@ -786,8 +786,21 @@ namespace KerbalJointReinforcement
 			{
 				Part p = v.Parts[i];
 
-				if(((p.children.Count == 0) || !KJRJointUtils.JointAdjustmentValid(p))
-					&& !p.Modules.Contains("LaunchClamp") && KJRJointUtils.MaximumPossiblePartMass(p) > KJRJointUtils.massForAdjustment)
+				bool bEndPoint = (p.children.Count == 0);
+
+				if(!bEndPoint && !KJRJointUtils.JointAdjustmentValid(p) && p.parent)
+				{
+					p = p.parent;
+
+					bEndPoint = true;
+					for(int j = 0; j < p.children.Count; j++)
+					{
+						if(KJRJointUtils.JointAdjustmentValid(p.children[j]))
+						{ bEndPoint = false; break; }
+					}
+				}
+
+				if(bEndPoint && !p.Modules.Contains("LaunchClamp") && KJRJointUtils.MaximumPossiblePartMass(p) > KJRJointUtils.massForAdjustment)
 				{
 					if(p.rb == null && p.Rigidbody != null)
 						p = p.RigidBodyPart;
