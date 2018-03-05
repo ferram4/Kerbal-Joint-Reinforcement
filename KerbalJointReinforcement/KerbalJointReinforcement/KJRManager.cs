@@ -241,18 +241,6 @@ namespace KerbalJointReinforcement
 			if(!KJRJointUtils.JointAdjustmentValid(p) || p.rb == null || p.attachJoint == null)
 				return;
 
-			// ignore the special ground-attachements of KSP, if they are attached to a part we ignore
-			if(p.attachMode == AttachModes.SRF_ATTACH)
-			{
-				Part root = p.parent;
-				while(root)
-				{
-					if(!KJRJointUtils.JointAdjustmentValid(root))
-						return;
-					root = root.parent;
-				}
-			}
-
 			if(p.attachMethod == AttachNodeMethod.LOCKED_JOINT)
 			{
 				if(KJRJointUtils.debug)
