@@ -25,17 +25,34 @@ using UnityEngine;
 
 namespace KerbalJointReinforcement
 {
-	//This class adds an extra joint between a launch clamp and the part it is connected to for stiffness
+	// This class adds an extra joint between a launch clamp and the part it is connected to for stiffness
 	public class KJRLaunchClampReinforcementModule : PartModule
 	{
-		private List<ConfigurableJoint> joints;
+		private List<ConfigurableJoint> joints = new List<ConfigurableJoint>();
 		private List<Part> neighbours = new List<Part>();
 		//private bool decoupled = false;
 
 		public override void OnAwake()
 		{
 			base.OnAwake();
-			joints = new List<ConfigurableJoint>();
+		}
+
+		public void OnDestroy()
+		{
+			if(joints.Count > 0)
+				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+		}
+
+		public void OnPartPack()
+		{
+			if(joints.Count > 0)
+				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+
+			foreach(ConfigurableJoint j in joints)
+				GameObject.Destroy(j);
+
+			joints.Clear();
+			neighbours.Clear();
 		}
 
 		public void OnPartUnpack()
@@ -53,7 +70,7 @@ namespace KerbalJointReinforcement
 			}
 
 			if(part.parent.Rigidbody != null)
-				StrutConnectParts(part, part.parent);
+				joints.Add(KJRJointUtils.BuildJoint(part, part.parent));
 
 			if(KJRJointUtils.debug)
 			{
@@ -67,35 +84,20 @@ namespace KerbalJointReinforcement
 
 		private void OnVesselWasModified(Vessel v)
 		{
-			foreach(Part p in neighbours)
+			if(part.vessel == v)
 			{
-				if(p.vessel == part.vessel)
-					continue;
+				foreach(Part p in neighbours)
+				{
+					if(p.vessel == part.vessel)
+						continue;
 
-				if(KJRJointUtils.debug)
-					Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
+					if(KJRJointUtils.debug)
+						Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
 
-				BreakAllInvalidJoints();
-				return;
+					BreakAllInvalidJoints();
+					return;
+				}
 			}
-		}
-
-		public void OnPartPack()
-		{
-			if(joints.Count > 0)
-				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
-
-			foreach(ConfigurableJoint j in joints)
-				GameObject.Destroy(j);
-
-			joints.Clear();
-			neighbours.Clear();
-		}
-
-		public void OnDestroy()
-		{
-			if(joints.Count > 0)
-				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
 		}
 
 		private void BreakAllInvalidJoints()
@@ -140,24 +142,6 @@ namespace KerbalJointReinforcement
 				}
 			}
 			neighbours.Clear();
-		}
-
-		private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
-		{
-			ConfigurableJoint newJoint = partWithJoint.gameObject.AddComponent<ConfigurableJoint>();
-
-			newJoint.connectedBody = partConnectedByJoint.rb;
-			newJoint.anchor = Vector3.zero;
-			newJoint.connectedAnchor = partWithJoint.transform.worldToLocalMatrix.MultiplyPoint(partConnectedByJoint.transform.position); // -> why was this not set in previous version? forgotten? Decoupler does set this... what's the difference??
-			newJoint.axis = Vector3.right;
-			newJoint.secondaryAxis = Vector3.forward;
-			newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-			newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-
-			newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-			newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-			joints.Add(newJoint);
 		}
 	}
 }

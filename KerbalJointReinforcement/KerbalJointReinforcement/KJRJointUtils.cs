@@ -60,164 +60,6 @@ namespace KerbalJointReinforcement
 
 		public static float massForAdjustment = 0.001f;
 
-		public static bool JointAdjustmentValid(Part p)
-		{
-			if(p.GetComponent<IKJRaware>() != null)
-				return false;
-
-			foreach(string s in exemptPartTypes)
-				if(p.GetType().ToString() == s)
-					return false;
-
-			foreach(string s in exemptModuleTypes)
-				if(p.Modules.Contains(s))
-					return false;
-
-			return true;
-		}
-
-		public static bool GetsDecouplerStiffeningExtension(Part p)
-		{
-			string typeString = p.GetType().ToString();
-
-			foreach(string s in decouplerStiffeningExtensionType)
-				if(typeString == s)
-					return true;
-
-			foreach(string s in decouplerStiffeningExtensionType)
-				if(p.Modules.Contains(s))
-					return true;
-
-			return false;
-		}
-
-		public static List<Part> DecouplerPartStiffeningList(Part p, bool childrenNotParent, bool onlyAddLastPart)
-		{
-			List<Part> tmpPartList = new List<Part>();
-			bool extend = false;
-			// non-physical parts are skipped over by attachJoints, so do the same
-			if(p.physicalSignificance == Part.PhysicalSignificance.NONE)
-				extend = true;
-			if(!extend)
-				extend = GetsDecouplerStiffeningExtension(p);
-
-			List<Part> newAdditions = new List<Part>();
-			if(extend)
-			{
-				if(childrenNotParent)
-				{
-					if(p.children != null)
-					{
-						foreach(Part q in p.children)
-						{
-							if(q != null && q.parent == p)
-								newAdditions.AddRange(DecouplerPartStiffeningList(q, childrenNotParent, onlyAddLastPart));
-						}
-					}
-				}
-				else
-				{
-					if(p.parent)
-						newAdditions.AddRange(DecouplerPartStiffeningList(p.parent, childrenNotParent, onlyAddLastPart));
-				}
-			}
-			else
-			{
-				float thisPartMaxMass = MaximumPossiblePartMass(p);
-				if(childrenNotParent)
-				{
-					if(p.children != null)
-						foreach(Part q in p.children)
-						{
-							if(q != null && q.parent == p)
-							{
-								float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
-								//if(massRatio < 1)
-								//	massRatio = 1 / massRatio;
-
-								if(massRatio > stiffeningExtensionMassRatioThreshold)
-								{
-									newAdditions.Add(q);
-									if(debug)
-										Debug.Log("Part " + q.partInfo.title + " added to list due to mass ratio difference");
-								}
-							}
-						}
-				}
-				else
-				{
-					if(p.parent)
-					{
-						float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
-						//if(massRatio < 1)
-						//	massRatio = 1 / massRatio;
-
-						if(massRatio > stiffeningExtensionMassRatioThreshold)
-						{
-							newAdditions.Add(p.parent);
-							if(debug)
-								Debug.Log("Part " + p.parent.partInfo.title + " added to list due to mass ratio difference");
-						}
-					}
-				}
-			}
-			if(newAdditions.Count > 0)
-				tmpPartList.AddRange(newAdditions);
-			else if(onlyAddLastPart)
-				extend = false;
-
-			if(!(onlyAddLastPart && extend))
-				tmpPartList.Add(p);
-
-			return tmpPartList;
-		}
-
-		public static void ConnectLaunchClampToGround(Part clamp)
-		{
-			float breakForce = Mathf.Infinity;
-			float breakTorque = Mathf.Infinity;
-			FixedJoint newJoint;
-
-			newJoint = clamp.gameObject.AddComponent<FixedJoint>();
-
-			newJoint.connectedBody = null;
-			newJoint.anchor = Vector3.zero;
-			newJoint.axis = Vector3.up;
-			//newJoint.secondaryAxis = Vector3.forward;
-			newJoint.breakForce = breakForce;
-			newJoint.breakTorque = breakTorque;
-
-			//newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-			//newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-		}
-
-		public static float MaximumPossiblePartMass(Part p)
-		{
-			float maxMass = p.mass;
-			foreach(PartResource r in p.Resources)
-				maxMass += (float)(r.info.density * r.maxAmount);
-
-			if(debug)
-				Debug.Log("Maximum mass for part " + p.partInfo.title + " is " + maxMass);
-			return maxMass;
-		}
-
-		public static void AddDecouplerJointReinforcementModule(Part p)
-		{
-			p.AddModule("KJRDecouplerReinforcementModule");
-			(p.Modules["KJRDecouplerReinforcementModule"] as KJRDecouplerReinforcementModule).OnPartUnpack();
-			if(debug)
-				Debug.Log("Added KJRDecouplerReinforcementModule to part " + p.partInfo.title);
-		}
-
-		public static void AddLaunchClampReinforcementModule(Part p)
-		{
-			p.AddModule("KJRLaunchClampReinforcementModule");
-			(p.Modules["KJRLaunchClampReinforcementModule"] as KJRLaunchClampReinforcementModule).OnPartUnpack();
-			if(debug)
-				Debug.Log("Added KJRLaunchClampReinforcementModule to part " + p.partInfo.title);
-		}
-
 		public static void LoadConstants()
 		{
 			PluginConfiguration config = PluginConfiguration.CreateForType<KJRManager>();
@@ -311,6 +153,20 @@ namespace KerbalJointReinforcement
 
 				Debug.Log(debugString.ToString());
 			}
+		}
+
+		////////////////////////////////////////
+		// find part information
+
+		public static float MaximumPossiblePartMass(Part p)
+		{
+			float maxMass = p.mass;
+			foreach(PartResource r in p.Resources)
+				maxMass += (float)(r.info.density * r.maxAmount);
+
+			if(debug)
+				Debug.Log("Maximum mass for part " + p.partInfo.title + " is " + maxMass);
+			return maxMass;
 		}
 
 		public static Vector3 GuessUpVector(Part part)
@@ -434,6 +290,179 @@ namespace KerbalJointReinforcement
 			//maxExtents = Vector3.Exclude(maxExtents, Vector3.up);
 
 			return maxExtents.x * maxExtents.z;
+		}
+
+		////////////////////////////////////////
+		// find joint reinforcement information
+
+		public static bool IsJointAdjustmentAllowed(Part p)
+		{
+			if(p.GetComponent<IKJRaware>() != null)
+				return false;
+
+			if(p.GetComponent<ModuleGrappleNode>() != null)
+				return false;
+
+			foreach(string s in exemptPartTypes)
+				if(p.GetType().ToString() == s)
+					return false;
+
+			foreach(string s in exemptModuleTypes)
+				if(p.Modules.Contains(s))
+					return false;
+
+			return true;
+		}
+
+		public static bool GetsDecouplerStiffeningExtension(Part p)
+		{
+			string typeString = p.GetType().ToString();
+
+			foreach(string s in decouplerStiffeningExtensionType)
+				if(typeString == s)
+					return true;
+
+			foreach(string s in decouplerStiffeningExtensionType)
+				if(p.Modules.Contains(s))
+					return true;
+
+			return false;
+		}
+
+		public static List<Part> DecouplerPartStiffeningList(Part p, bool childrenNotParent, bool onlyAddLastPart)
+		{
+			List<Part> tmpPartList = new List<Part>();
+			bool extend = false;
+			// non-physical parts are skipped over by attachJoints, so do the same
+			if(p.physicalSignificance == Part.PhysicalSignificance.NONE)
+				extend = true;
+			if(!extend)
+				extend = GetsDecouplerStiffeningExtension(p);
+
+			List<Part> newAdditions = new List<Part>();
+			if(extend)
+			{
+				if(childrenNotParent)
+				{
+					if(p.children != null)
+					{
+						foreach(Part q in p.children)
+						{
+							if(q != null && q.parent == p)
+								newAdditions.AddRange(DecouplerPartStiffeningList(q, childrenNotParent, onlyAddLastPart));
+						}
+					}
+				}
+				else
+				{
+					if(p.parent)
+						newAdditions.AddRange(DecouplerPartStiffeningList(p.parent, childrenNotParent, onlyAddLastPart));
+				}
+			}
+			else
+			{
+				float thisPartMaxMass = MaximumPossiblePartMass(p);
+				if(childrenNotParent)
+				{
+					if(p.children != null)
+						foreach(Part q in p.children)
+						{
+							if(q != null && q.parent == p)
+							{
+								float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
+								//if(massRatio < 1)
+								//	massRatio = 1 / massRatio;
+
+								if(massRatio > stiffeningExtensionMassRatioThreshold)
+								{
+									newAdditions.Add(q);
+									if(debug)
+										Debug.Log("Part " + q.partInfo.title + " added to list due to mass ratio difference");
+								}
+							}
+						}
+				}
+				else
+				{
+					if(p.parent)
+					{
+						float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
+						//if(massRatio < 1)
+						//	massRatio = 1 / massRatio;
+
+						if(massRatio > stiffeningExtensionMassRatioThreshold)
+						{
+							newAdditions.Add(p.parent);
+							if(debug)
+								Debug.Log("Part " + p.parent.partInfo.title + " added to list due to mass ratio difference");
+						}
+					}
+				}
+			}
+			if(newAdditions.Count > 0)
+				tmpPartList.AddRange(newAdditions);
+			else if(onlyAddLastPart)
+				extend = false;
+
+			if(!(onlyAddLastPart && extend))
+				tmpPartList.Add(p);
+
+			return tmpPartList;
+		}
+
+		////////////////////////////////////////
+		// functions
+
+		public static ConfigurableJoint BuildJoint(Part p, Part linkPart)
+		{
+			ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+
+			newJoint.connectedBody = linkPart.Rigidbody;
+			newJoint.anchor = Vector3.zero;
+			newJoint.axis = Vector3.right;
+			newJoint.secondaryAxis = Vector3.forward;
+			newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
+			newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
+
+			newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
+			newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+			return newJoint;
+		}
+
+		public static void AddDecouplerJointReinforcementModule(Part p)
+		{
+			p.AddModule("KJRDecouplerReinforcementModule");
+			(p.Modules["KJRDecouplerReinforcementModule"] as KJRDecouplerReinforcementModule).OnPartUnpack();
+			if(debug)
+				Debug.Log("Added KJRDecouplerReinforcementModule to part " + p.partInfo.title);
+		}
+
+		public static void AddLaunchClampReinforcementModule(Part p)
+		{
+			p.AddModule("KJRLaunchClampReinforcementModule");
+			(p.Modules["KJRLaunchClampReinforcementModule"] as KJRLaunchClampReinforcementModule).OnPartUnpack();
+			if(debug)
+				Debug.Log("Added KJRLaunchClampReinforcementModule to part " + p.partInfo.title);
+		}
+
+		public static void ConnectLaunchClampToGround(Part clamp)
+		{
+			float breakForce = Mathf.Infinity;
+			float breakTorque = Mathf.Infinity;
+			FixedJoint newJoint;
+
+			newJoint = clamp.gameObject.AddComponent<FixedJoint>();
+
+			newJoint.connectedBody = null;
+			newJoint.anchor = Vector3.zero;
+			newJoint.axis = Vector3.up;
+			//newJoint.secondaryAxis = Vector3.forward;
+			newJoint.breakForce = breakForce;
+			newJoint.breakTorque = breakTorque;
+
+			//newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
+			//newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
 		}
 	}
 }

@@ -25,7 +25,7 @@ using UnityEngine;
 
 namespace KerbalJointReinforcement
 {
-	//This class adds extra joints between the parts connected to a decoupler to stiffen up the connection
+	// This class adds extra joints between the parts connected to a decoupler to stiffen up the connection
 	public class KJRDecouplerReinforcementModule : PartModule
 	{
 		protected List<ConfigurableJoint> joints = new List<ConfigurableJoint>();
@@ -50,17 +50,29 @@ namespace KerbalJointReinforcement
 				}
 		}
 
-		public override void OnStart(PartModule.StartState state)
+		public void OnDestroy()
 		{
-			base.OnStart(state);
-
-			if(part.parent == null)
-				return;
-
-			//if(part.attachMode == AttachModes.SRF_ATTACH)
-			//	radiallyAttached = true;
+			if(joints.Count > 0)
+			{
+				GameEvents.onVesselCreate.Remove(OnVesselWasModified);
+				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+			}
 		}
 
+		public void OnPartPack()
+		{
+			if(joints.Count > 0)
+			{
+				GameEvents.onVesselCreate.Remove(OnVesselWasModified);
+				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+			}
+
+			foreach(ConfigurableJoint j in joints)
+				GameObject.Destroy(j);
+
+			joints.Clear();
+			neighbours.Clear();
+		}
 
 		public void OnPartUnpack()
 		{
@@ -76,16 +88,19 @@ namespace KerbalJointReinforcement
 
 		private void OnVesselWasModified(Vessel v)
 		{
-			foreach(Part p in neighbours)
+			if(part.vessel == v)
 			{
-				if(p.vessel == part.vessel)
-					continue;
+				foreach(Part p in neighbours)
+				{
+					if(p.vessel == part.vessel)
+						continue;
 
-				if(KJRJointUtils.debug)
-					Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
+					if(KJRJointUtils.debug)
+						Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
 
-				BreakAllInvalidJointsAndRebuild();
-				break;
+					BreakAllInvalidJointsAndRebuild();
+					break;
+				}
 			}
 		}
 
@@ -120,14 +135,15 @@ namespace KerbalJointReinforcement
 
 			foreach(Part p in parentParts)
 			{
-				if(p == null || p.rb == null || p.Modules.Contains("ProceduralFairingDecoupler") || !KJRJointUtils.JointAdjustmentValid(p))
+				if(p == null || p.rb == null || !KJRJointUtils.IsJointAdjustmentAllowed(p) || p.Modules.Contains("ProceduralFairingDecoupler"))
 					continue;
+
 				foreach(Part q in childParts)
 				{
-					if(q == null || q.rb == null || q.Modules.Contains("ProceduralFairingDecoupler") || p == q || !KJRJointUtils.JointAdjustmentValid(q))
+					if(q == null || q.rb == null || p == q || !KJRJointUtils.IsJointAdjustmentAllowed(q) || q.Modules.Contains("ProceduralFairingDecoupler"))
 						continue;
 
-					StrutConnectParts(p, q);
+					joints.Add(KJRJointUtils.BuildJoint(p, q));
 
 					if(KJRJointUtils.debug)
 						debugString.AppendLine(p.partInfo.title + " connected to part " + q.partInfo.title);
@@ -136,42 +152,18 @@ namespace KerbalJointReinforcement
 
 			if(joints.Count > 0)
 			{
-				GameEvents.onVesselWasModified.Add(OnVesselWasModified);
 				GameEvents.onVesselCreate.Add(OnVesselWasModified);
+				GameEvents.onVesselWasModified.Add(OnVesselWasModified);
 			}
 
 			if(KJRJointUtils.debug)
 				Debug.Log(debugString.ToString());
 		}
 
-		public void OnPartPack()
-		{
-			if(joints.Count > 0)
-			{
-				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
-				GameEvents.onVesselCreate.Remove(OnVesselWasModified);
-			}
-
-			foreach(ConfigurableJoint j in joints)
-				GameObject.Destroy(j);
-
-			joints.Clear();
-			neighbours.Clear();
-		}
-
-		public void OnDestroy()
-		{
-			if(joints.Count > 0)
-			{
-				GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
-				GameEvents.onVesselCreate.Remove(OnVesselWasModified);
-			}
-		}
-
 		private void BreakAllInvalidJointsAndRebuild()
 		{
-			GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
 			GameEvents.onVesselCreate.Remove(OnVesselWasModified);
+			GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
 
 			foreach(ConfigurableJoint j in joints)
 				GameObject.Destroy(j);
@@ -220,24 +212,6 @@ namespace KerbalJointReinforcement
 				return;
 
 			AddExtraJoints();
-		}
-
-		private void StrutConnectParts(Part partWithJoint, Part partConnectedByJoint)
-		{
-			ConfigurableJoint newJoint = partWithJoint.gameObject.AddComponent<ConfigurableJoint>();
-
-			newJoint.connectedBody = partConnectedByJoint.rb;
-			newJoint.anchor = Vector3.zero;
-			newJoint.connectedAnchor = partWithJoint.transform.worldToLocalMatrix.MultiplyPoint(partConnectedByJoint.transform.position);
-			newJoint.axis = Vector3.right;
-			newJoint.secondaryAxis = Vector3.forward;
-			newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-			newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-
-			newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-			newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-			joints.Add(newJoint);
 		}
 	}
 }

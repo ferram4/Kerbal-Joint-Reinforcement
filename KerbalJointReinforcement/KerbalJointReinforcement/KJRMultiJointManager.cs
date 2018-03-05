@@ -74,13 +74,13 @@ namespace KerbalJointReinforcement
 			while(linkPart1 != null)
 			{
 				linkedSet.Add(linkPart1);
-				linkPart1 = KJRJointUtils.JointAdjustmentValid(linkPart1) ? linkPart1.parent : null;
+				linkPart1 = KJRJointUtils.IsJointAdjustmentAllowed(linkPart1) ? linkPart1.parent : null;
 			}
 
 			while(linkPart2 != null)
 			{
 				tempPartList.Add(linkPart2);
-				linkPart2 = KJRJointUtils.JointAdjustmentValid(linkPart2) ? linkPart2.parent : null;
+				linkPart2 = KJRJointUtils.IsJointAdjustmentAllowed(linkPart2) ? linkPart2.parent : null;
 			}
 
 			int i = linkedSet.Count - 1;

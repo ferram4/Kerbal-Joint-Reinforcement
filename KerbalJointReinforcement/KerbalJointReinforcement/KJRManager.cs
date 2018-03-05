@@ -100,11 +100,13 @@ namespace KerbalJointReinforcement
 				return; 
 			
 			RunVesselJointUpdateFunction(v);
+
 			if(!vesselOffRails.Contains(v) && v.precalc.isEasingGravity)
 			{
 				Debug.Log("KJR easing " + v.vesselName);
+
 				vesselOffRails.Add(v);
-				List<Joint> jointList = new List<Joint>();
+
 				for(int i = 0; i < v.Parts.Count; ++i)
 				{
 					Part p = v.Parts[i];
@@ -119,7 +121,6 @@ namespace KerbalJointReinforcement
 						foreach(Joint j in partJoints)
 							if(j.connectedBody == null)
 							{
-								jointList.Remove(j);
 								GameObject.Destroy(j);
 								KJRJointUtils.ConnectLaunchClampToGround(p);
 								break;
@@ -160,23 +161,16 @@ namespace KerbalJointReinforcement
 							v.rootPart.partInfo.name + " (" + v.rootPart.flightID + ")");
 			}
 
-			bool child_parts = false;
-			bool success = false;
+			bool bReinforced = false;
 
 			foreach(Part p in v.Parts)
 			{
-				if(p.parent != null && p.physicalSignificance == Part.PhysicalSignificance.FULL)
-				{
-					child_parts = true;
-
-					if(p.attachJoint != null)
+				if(KJRJointUtils.reinforceAttachNodes)
+					if(p.parent != null && p.physicalSignificance == Part.PhysicalSignificance.FULL)
 					{
-						success = true;
-
-						if(KJRJointUtils.reinforceAttachNodes)
-							UpdatePartJoint(p);
+						bReinforced = true;
+						UpdatePartJoint(p);
 					}
-				}
 
 				if(KJRJointUtils.reinforceDecouplersFurther)
 					if(ValidDecoupler(p))
@@ -199,11 +193,11 @@ namespace KerbalJointReinforcement
 					}
 			}
 
+			if(bReinforced)
+				updatedVessels.Add(v);
+
 			if(KJRJointUtils.reinforceAttachNodes && KJRJointUtils.multiPartAttachNodeReinforcement)
 				MultiPartJointTreeChildren(v);
-
-			if(success || !child_parts)
-				updatedVessels.Add(v);
 		}
 
 		private bool ValidDecoupler(Part p)
@@ -238,7 +232,7 @@ namespace KerbalJointReinforcement
 
 		private void UpdatePartJoint(Part p)
 		{
-			if(!KJRJointUtils.JointAdjustmentValid(p) || p.rb == null || p.attachJoint == null)
+			if(p.rb == null || p.attachJoint == null || !KJRJointUtils.IsJointAdjustmentAllowed(p))
 				return;
 
 			if(p.attachMethod == AttachNodeMethod.LOCKED_JOINT)
@@ -248,11 +242,10 @@ namespace KerbalJointReinforcement
 					Debug.Log("KJR: Already processed part before: " + p.partInfo.name + " (" + p.flightID + ") -> " +
 							  p.parent.partInfo.name + " (" + p.parent.flightID + ")");
 				}
-
-				return;
 			}
 
 			List<ConfigurableJoint> jointList;
+
 			if(p.Modules.Contains<CModuleStrut>())
 			{
 				CModuleStrut s = p.Modules.GetModule<CModuleStrut>();
@@ -566,12 +559,16 @@ namespace KerbalJointReinforcement
 
 				if(addAdditionalJointToParent && p.parent.parent != null)
 				{
-					addAdditionalJointToParent = false;
-					if(!KJRJointUtils.JointAdjustmentValid(p.parent)) // || !KJRJointUtils.JointAdjustmentValid(p.parent.parent)) FEHLER, auf dieses Teil verbinden ist noch erlaubt, nur darüber hinweg nicht
-						continue;
-
 					/*if(ValidDecoupler(p) || ValidDecoupler(p.parent))
 						continue;*/
+
+					addAdditionalJointToParent = false;
+
+					// verify that parent and parent of parent (our target part) is not an excluded part
+					if(!KJRJointUtils.IsJointAdjustmentAllowed(p.parent)
+					|| !KJRJointUtils.IsJointAdjustmentAllowed(p.parent.parent))
+						continue;
+
 					Part newConnectedPart = p.parent.parent;
 
 					bool massRatioBelowThreshold = false;
@@ -600,28 +597,26 @@ namespace KerbalJointReinforcement
 
 						if(massRat1 > KJRJointUtils.stiffeningExtensionMassRatioThreshold || massRat2 > KJRJointUtils.stiffeningExtensionMassRatioThreshold)
 						{
-							if(newConnectedPart.parent != null)
-							{
-								if(!KJRJointUtils.JointAdjustmentValid(newConnectedPart.parent))
-									break;
-
-								newConnectedPart = newConnectedPart.parent;
-								if(newConnectedPart.rb == null)
-									possiblePartsCrossed.Add(newConnectedPart);
-								else
-								{
-									connectedRb = newConnectedPart.rb;
-									partsCrossed.AddRange(possiblePartsCrossed);
-									partsCrossed.Add(newConnectedPart);
-									possiblePartsCrossed.Clear();
-								}
-							}
-							else
+							if((newConnectedPart.parent == null)
+							|| !KJRJointUtils.IsJointAdjustmentAllowed(newConnectedPart.parent))
 								break;
+
+							newConnectedPart = newConnectedPart.parent;
+							if(newConnectedPart.rb == null)
+								possiblePartsCrossed.Add(newConnectedPart);
+							else
+							{
+								connectedRb = newConnectedPart.rb;
+								partsCrossed.AddRange(possiblePartsCrossed);
+								partsCrossed.Add(newConnectedPart);
+								possiblePartsCrossed.Clear();
+							}
+
 							numPartsFurther++;
 						}
 						else
 							massRatioBelowThreshold = true;
+
 					} while(!massRatioBelowThreshold);// && numPartsFurther < 5);
 
 					if(connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
@@ -629,13 +624,10 @@ namespace KerbalJointReinforcement
 						ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
 
 						newJoint.connectedBody = connectedRb;
+						newJoint.anchor = Vector3.zero;
 						newJoint.axis = Vector3.right;
 						newJoint.secondaryAxis = Vector3.forward;
-						newJoint.anchor = Vector3.zero;
 						newJoint.connectedAnchor = p.transform.worldToLocalMatrix.MultiplyPoint(newConnectedPart.transform.position);
-
-						//if(massRatioBelowThreshold)
-						//{
 
 						newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = j.angularXDrive;
 
@@ -645,72 +637,12 @@ namespace KerbalJointReinforcement
 
 						newJoint.linearLimit = newJoint.angularYLimit = newJoint.angularZLimit = newJoint.lowAngularXLimit = newJoint.highAngularXLimit = lim;
 
-						/*newJoint.targetAngularVelocity = Vector3.zero;
-						newJoint.targetVelocity = Vector3.zero;
-						newJoint.targetRotation = Quaternion.identity;
-						newJoint.targetPosition = Vector3.zero;*/
-						/*}
-						else
-						{
-							newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-							newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-						}*/
-
 						newJoint.breakForce = breakForce;
 						newJoint.breakTorque = breakTorque;
 
-						//jointList.Add(newJoint);
 						for(int k = 0; k < partsCrossed.Count; k++)
 							multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
 					}
-
-					/*if(p.symmetryCounterparts != null && p.symmetryCounterparts.Count > 0)
-					{
-						Part linkPart = null;
-						Vector3 center = p.transform.position;
-						float cross = float.NegativeInfinity;
-						for(int k = 0; k < p.symmetryCounterparts.Count; k++)
-						{
-							center += p.symmetryCounterparts[k].transform.position;
-						}
-						center /= (p.symmetryCounterparts.Count + 1);
-
-						for(int k = 0; k < p.symmetryCounterparts.Count; k++)
-						{
-							Part counterPart = p.symmetryCounterparts[k];
-							if(counterPart.parent == p.parent && counterPart.rb != null)
-							{
-								float tmpCross = Vector3.Dot(Vector3.Cross(center - p.transform.position, counterPart.transform.position - p.transform.position), p.transform.up);
-								if(tmpCross > cross)
-								{
-									cross = tmpCross;
-									linkPart = counterPart;
-								}
-							}
-						}
-						if(linkPart)
-						{
-							Rigidbody rigidBody = linkPart.rb;
-							if(!linkPart.rb)
-								continue;
-							ConfigurableJoint newJoint;
-
-							newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
-
-							newJoint.connectedBody = rigidBody;
-							newJoint.anchor = Vector3.zero;
-							newJoint.axis = Vector3.right;
-							newJoint.secondaryAxis = Vector3.forward;
-							newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-							newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-
-							newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-							newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-							multiJointManager.RegisterMultiJoint(p, newJoint);
-							multiJointManager.RegisterMultiJoint(linkPart, newJoint);
-						}
-					}*/
 				}
 
 				if(KJRJointUtils.debug)
@@ -755,24 +687,12 @@ namespace KerbalJointReinforcement
 				Debug.Log(debugString.ToString());
 		}
 
-		private void BuildJoint(Part p, Part linkPart)
+		private void MultiPartJointBuildJoint(Part p, Part linkPart)
 		{
 			if(multiJointManager.CheckMultiJointBetweenParts(p, linkPart) || !multiJointManager.TrySetValidLinkedSet(p, linkPart))
 				return;
 
-			ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
-
-			newJoint.connectedBody = linkPart.Rigidbody;
-			newJoint.anchor = Vector3.zero;
-			newJoint.axis = Vector3.right;
-			newJoint.secondaryAxis = Vector3.forward;
-			newJoint.breakForce = KJRJointUtils.decouplerAndClampJointStrength;
-			newJoint.breakTorque = KJRJointUtils.decouplerAndClampJointStrength;
-
-			newJoint.xMotion = newJoint.yMotion = newJoint.zMotion = ConfigurableJointMotion.Locked;
-			newJoint.angularXMotion = newJoint.angularYMotion = newJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-			multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, newJoint);
+			multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, KJRJointUtils.BuildJoint(p, linkPart));
 		}
 
 		public void MultiPartJointTreeChildren(Vessel v)
@@ -788,14 +708,14 @@ namespace KerbalJointReinforcement
 
 				bool bEndPoint = (p.children.Count == 0);
 
-				if(!bEndPoint && !KJRJointUtils.JointAdjustmentValid(p) && p.parent)
+				if(!bEndPoint && !KJRJointUtils.IsJointAdjustmentAllowed(p) && p.parent)
 				{
 					p = p.parent;
 
 					bEndPoint = true;
 					for(int j = 0; j < p.children.Count; j++)
 					{
-						if(KJRJointUtils.JointAdjustmentValid(p.children[j]))
+						if(KJRJointUtils.IsJointAdjustmentAllowed(p.children[j]))
 						{ bEndPoint = false; break; }
 					}
 				}
@@ -806,7 +726,7 @@ namespace KerbalJointReinforcement
 						p = p.RigidBodyPart;
 
 					Part root = p;
-					while(root.parent && KJRJointUtils.JointAdjustmentValid(root))
+					while(root.parent && KJRJointUtils.IsJointAdjustmentAllowed(root))
 						root = root.parent;
 
 					List<Part> childPartsToConnect;
@@ -836,7 +756,7 @@ namespace KerbalJointReinforcement
 					if(!linkPart.Rigidbody || p.rb == linkPart.Rigidbody)
 						continue;
 
-					BuildJoint(p, linkPart);
+					MultiPartJointBuildJoint(p, linkPart);
 
 
 					int part2Index = i + childPartsToConnect.Count / 2;
@@ -848,13 +768,13 @@ namespace KerbalJointReinforcement
 					if(!linkPart2.Rigidbody || p.rb == linkPart2.Rigidbody)
 						continue;
 
-					BuildJoint(p, linkPart2);
+					MultiPartJointBuildJoint(p, linkPart2);
 
 
 					if(!root.Rigidbody || p.rb == root.Rigidbody)
 						continue;
 
-					BuildJoint(p, root);
+					MultiPartJointBuildJoint(p, root);
 				}
 			}
 		}
