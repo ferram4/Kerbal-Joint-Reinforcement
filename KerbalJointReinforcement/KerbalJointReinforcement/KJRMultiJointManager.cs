@@ -38,31 +38,15 @@ namespace KerbalJointReinforcement
 			multiJointDict = new Dictionary<Part, List<ConfigurableJoint>>();
 			linkedSet = new List<Part>();
 			tempPartList = new List<Part>();
-
-			GameEvents.onVesselCreate.Add(VesselCreate);
-			GameEvents.onPartUndock.Add(OnJointBreak);
-			GameEvents.onPartDie.Add(OnJointBreak);
 		}
 
-		public void OnDestroy()
+		// we remove all the joints and rebuild them later for this ship (so, no real "verify")
+		public void VerifyVesselJoints(Vessel v)
 		{
-			Debug.Log("KJRMultiJointManager cleanup");
-			GameEvents.onVesselCreate.Remove(VesselCreate);
-			GameEvents.onPartUndock.Remove(OnJointBreak);
-			GameEvents.onPartDie.Remove(OnJointBreak);
-		}
-		
-		//This entire scheme relies on a simple fact: when a vessel is created, the part that was decoupled is the root part
-		//Therefore, we only need to use vessel.RootPart and the parts with no children to ensure that all multijoints are broken
-		private void VesselCreate(Vessel v)
-		{
-			//Debug.Log(v.name + " joint break");
-			OnJointBreak(v.rootPart);
-
-			for(int i = 0; i < v.Parts.Count; ++i)
+			if(v.loaded)
 			{
-				Part p = v.Parts[i];
-				OnJointBreak(p);
+				foreach(Part p in v.Parts)
+					RemovePartJoints(p);
 			}
 		}
 
@@ -150,15 +134,11 @@ namespace KerbalJointReinforcement
 			return false;
 		}
 
-		public void OnJointBreak(PartJoint partJoint)
-		{
-			OnJointBreak(partJoint.Parent);
-		}
-
-		public void OnJointBreak(Part part)
+		public void RemovePartJoints(Part part)
 		{
 			if(part == null)
 				return;
+
 			List<ConfigurableJoint> configJointList;
 			if(multiJointDict.TryGetValue(part, out configJointList))
 			{

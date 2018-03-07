@@ -90,16 +90,15 @@ namespace KerbalJointReinforcement
 		{
 			if(part.vessel == v)
 			{
-				foreach(Part p in neighbours)
-				{
-					if(p.vessel == part.vessel)
-						continue;
+				int i = 0;
+				while((i < neighbours.Count) && (neighbours[i].vessel == v)) ++i;
 
+				if(i < neighbours.Count)
+				{
 					if(KJRJointUtils.debug)
-						Debug.Log("Decoupling part " + part.partInfo.title + "; destroying all extra joints");
+						Debug.Log("Decoupling part, destroying all extra joints of " + part.partInfo.title);
 
 					BreakAllInvalidJointsAndRebuild();
-					break;
 				}
 			}
 		}
@@ -143,6 +142,9 @@ namespace KerbalJointReinforcement
 					if(q == null || q.rb == null || p == q || !KJRJointUtils.IsJointAdjustmentAllowed(q) || q.Modules.Contains("ProceduralFairingDecoupler"))
 						continue;
 
+					if(p.vessel != q.vessel)
+						continue;
+
 					joints.Add(KJRJointUtils.BuildJoint(p, q));
 
 					if(KJRJointUtils.debug)
@@ -170,38 +172,6 @@ namespace KerbalJointReinforcement
 
 			joints.Clear();
 
-			var vessels = new List<Vessel>();
-
-			foreach(Part n in neighbours)
-			{
-				if(n.vessel == null || vessels.Contains(n.vessel))
-					continue;
-
-				vessels.Add(n.vessel);
-
-				foreach(Part p in n.vessel.Parts)
-				{
-					if(p.Modules.Contains<LaunchClamp>())
-						continue;
-
-					ConfigurableJoint[] possibleConnections = p.GetComponents<ConfigurableJoint>();
-
-					if(possibleConnections == null)
-						continue;
-
-					foreach(ConfigurableJoint j in possibleConnections)
-					{
-						if(j.connectedBody == null)
-						{
-							GameObject.Destroy(j);
-							continue;
-						}
-						Part cp = j.connectedBody.GetComponent<Part>();
-						if(cp != null && cp.vessel != p.vessel)
-							GameObject.Destroy(j);
-					}
-				}
-			}
 			neighbours.Clear();
 
 			if(part.parent == null || part.children.Count == 0)
