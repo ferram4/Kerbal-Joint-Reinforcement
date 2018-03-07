@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalJointReinforcement_Redist", "KerbalJointReinforcement_Redist\KerbalJointReinforcement_Redist.csproj", "{83C13B00-B58E-4002-A3C3-D97DA42E5A70}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalJointReinforcement", "KerbalJointReinforcement\KerbalJointReinforcement.csproj", "{961E5DEB-8F3D-46F3-BE1D-DA4C98613C9E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalJointReinforcement 1.3.1", "KerbalJointReinforcement\KerbalJointReinforcement 1.3.1.csproj", "{961E5DEB-8F3D-46F3-BE1D-DA4C98613C9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalJointReinforcement 1.4", "KerbalJointReinforcement\KerbalJointReinforcement 1.4.csproj", "{F5068A62-7704-4078-BC17-C794658D2AF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7DDCB925-FC49-4C14-899F-96CCA21B8A7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7DDCB925-FC49-4C14-899F-96CCA21B8A7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7DDCB925-FC49-4C14-899F-96CCA21B8A7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7DDCB925-FC49-4C14-899F-96CCA21B8A7A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{83C13B00-B58E-4002-A3C3-D97DA42E5A70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{83C13B00-B58E-4002-A3C3-D97DA42E5A70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83C13B00-B58E-4002-A3C3-D97DA42E5A70}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -23,6 +21,10 @@ Global
 		{961E5DEB-8F3D-46F3-BE1D-DA4C98613C9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{961E5DEB-8F3D-46F3-BE1D-DA4C98613C9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{961E5DEB-8F3D-46F3-BE1D-DA4C98613C9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5068A62-7704-4078-BC17-C794658D2AF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5068A62-7704-4078-BC17-C794658D2AF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5068A62-7704-4078-BC17-C794658D2AF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5068A62-7704-4078-BC17-C794658D2AF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
