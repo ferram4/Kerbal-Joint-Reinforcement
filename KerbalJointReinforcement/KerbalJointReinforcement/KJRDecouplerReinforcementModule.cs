@@ -108,12 +108,16 @@ namespace KerbalJointReinforcement
 			List<Part> childParts = new List<Part>();
 			List<Part> parentParts = new List<Part>();
 
-			parentParts = KJRJointUtils.DecouplerPartStiffeningList(part.parent, false, true);
+			parentParts = KJRJointUtils.DecouplerPartStiffeningListParents(part.parent);
+
 			foreach(Part p in part.children)
 			{
-				childParts.AddRange(KJRJointUtils.DecouplerPartStiffeningList(p, true, true));
-				if(!childParts.Contains(p))
-					childParts.Add(p);
+				if(KJRJointUtils.IsJointAdjustmentAllowed(p))
+				{
+					childParts.AddRange(KJRJointUtils.DecouplerPartStiffeningListChildren(p));
+					if(!childParts.Contains(p))
+						childParts.Add(p);
+				}
 			}
 
 			neighbours.Clear();
@@ -134,12 +138,12 @@ namespace KerbalJointReinforcement
 
 			foreach(Part p in parentParts)
 			{
-				if(p == null || p.rb == null || !KJRJointUtils.IsJointAdjustmentAllowed(p) || p.Modules.Contains("ProceduralFairingDecoupler"))
+				if(p == null || p.rb == null || p.Modules.Contains("ProceduralFairingDecoupler"))
 					continue;
 
 				foreach(Part q in childParts)
 				{
-					if(q == null || q.rb == null || p == q || !KJRJointUtils.IsJointAdjustmentAllowed(q) || q.Modules.Contains("ProceduralFairingDecoupler"))
+					if(q == null || q.rb == null || p == q || q.Modules.Contains("ProceduralFairingDecoupler"))
 						continue;
 
 					if(p.vessel != q.vessel)

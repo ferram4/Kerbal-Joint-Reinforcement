@@ -609,50 +609,65 @@ namespace KerbalJointReinforcement
 
 					Rigidbody connectedRb = newConnectedPart.rb;
 
+					// search the first part with an acceptable mass/mass ration to this part (joints work better
 					do
 					{
-						float massRat1, massRat2;
-						massRat1 = partMaxMass / newConnectedPart.mass;
-						if(massRat1 < 1)
-							massRat1 = 1 / massRat1;
+						float massRat1 = (partMaxMass < newConnectedPart.mass) ? (newConnectedPart.mass / partMaxMass) : (partMaxMass / newConnectedPart.mass);
 
-						massRat2 = p.mass / KJRJointUtils.MaximumPossiblePartMass(newConnectedPart);
-						if(massRat2 < 1)
-							massRat2 = 1 / massRat2;
-
-						if(massRat1 > KJRJointUtils.stiffeningExtensionMassRatioThreshold || massRat2 > KJRJointUtils.stiffeningExtensionMassRatioThreshold)
+						if(massRat1 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
+							massRatioBelowThreshold = true;
+						else
 						{
-							if((newConnectedPart.parent == null)
-							|| !KJRJointUtils.IsJointAdjustmentAllowed(newConnectedPart.parent))
-								break;
-
-							newConnectedPart = newConnectedPart.parent;
-							if(newConnectedPart.rb == null)
-								possiblePartsCrossed.Add(newConnectedPart);
+							float maxMass = KJRJointUtils.MaximumPossiblePartMass(newConnectedPart);
+							float massRat2 = (p.mass < maxMass) ? (maxMass / p.mass) : (p.mass / maxMass);
+						
+							if(massRat2 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
+								massRatioBelowThreshold = true;
 							else
 							{
-								connectedRb = newConnectedPart.rb;
-								partsCrossed.AddRange(possiblePartsCrossed);
-								partsCrossed.Add(newConnectedPart);
-								possiblePartsCrossed.Clear();
-							}
+								if((newConnectedPart.parent == null)
+								|| !KJRJointUtils.IsJointAdjustmentAllowed(newConnectedPart.parent))
+									break;
 
-							numPartsFurther++;
+								newConnectedPart = newConnectedPart.parent;
+
+								if(newConnectedPart.rb == null)
+									possiblePartsCrossed.Add(newConnectedPart);
+								else
+								{
+									connectedRb = newConnectedPart.rb;
+									partsCrossed.AddRange(possiblePartsCrossed);
+									partsCrossed.Add(newConnectedPart);
+									possiblePartsCrossed.Clear();
+								}
+
+								numPartsFurther++;
+							}
 						}
-						else
-							massRatioBelowThreshold = true;
 
 					} while(!massRatioBelowThreshold);// && numPartsFurther < 5);
 
 					if(connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
 					{
-						ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+						ConfigurableJoint newJoint;
 
-						newJoint.connectedBody = connectedRb;
-						newJoint.anchor = Vector3.zero;
+						if((p.mass >= newConnectedPart.mass) || (p.rb == null))
+						{
+							newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+							newJoint.connectedBody = connectedRb;
+						}
+						else
+						{
+							newJoint = connectedRb.gameObject.AddComponent<ConfigurableJoint>();
+							newJoint.connectedBody = p.rb;
+						}
+
 						newJoint.axis = Vector3.right;
 						newJoint.secondaryAxis = Vector3.forward;
-						newJoint.connectedAnchor = p.transform.worldToLocalMatrix.MultiplyPoint(newConnectedPart.transform.position);
+
+						newJoint.anchor = Vector3.zero;
+					//	newJoint.autoConfigureConnectedAnchor = false;
+					//	newJoint.connectedAnchor = newJoint.connectedBody.transform.InverseTransformPoint(newJoint.transform.position);
 
 						newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = j.angularXDrive;
 

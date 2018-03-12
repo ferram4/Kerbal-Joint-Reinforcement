@@ -299,6 +299,9 @@ namespace KerbalJointReinforcement
 		{
 			if(p.GetComponent<IKJRaware>() != null)
 				return false;
+			
+			if(p.GetComponent<KerbalEVA>() != null)
+				return false;
 
 			if(p.GetComponent<ModuleGrappleNode>() != null)
 				return false;
@@ -329,82 +332,104 @@ namespace KerbalJointReinforcement
 			return false;
 		}
 
-		public static List<Part> DecouplerPartStiffeningList(Part p, bool childrenNotParent, bool onlyAddLastPart)
+		public static List<Part> DecouplerPartStiffeningListParents(Part p)
 		{
 			List<Part> tmpPartList = new List<Part>();
-			bool extend = false;
+
 			// non-physical parts are skipped over by attachJoints, so do the same
-			if(p.physicalSignificance == Part.PhysicalSignificance.NONE)
-				extend = true;
+			bool extend = (p.physicalSignificance == Part.PhysicalSignificance.NONE);
+
 			if(!extend)
 				extend = GetsDecouplerStiffeningExtension(p);
 
 			List<Part> newAdditions = new List<Part>();
+
 			if(extend)
 			{
-				if(childrenNotParent)
+				if(p.parent && IsJointAdjustmentAllowed(p))
+					newAdditions.AddRange(DecouplerPartStiffeningListParents(p.parent));
+			}
+			else
+			{
+				float thisPartMaxMass = MaximumPossiblePartMass(p);
+
+				if(p.parent && IsJointAdjustmentAllowed(p))
 				{
-					if(p.children != null)
+					float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
+					//if(massRatio < 1)
+					//	massRatio = 1 / massRatio;
+
+					if(massRatio > stiffeningExtensionMassRatioThreshold)
 					{
-						foreach(Part q in p.children)
-						{
-							if(q != null && q.parent == p)
-								newAdditions.AddRange(DecouplerPartStiffeningList(q, childrenNotParent, onlyAddLastPart));
-						}
+						newAdditions.Add(p.parent);
+						if(debug)
+							Debug.Log("Part " + p.parent.partInfo.title + " added to list due to mass ratio difference");
 					}
 				}
-				else
+			}
+
+			if(newAdditions.Count > 0)
+				tmpPartList.AddRange(newAdditions);
+			else
+				extend = false;
+
+			if(!extend)
+				tmpPartList.Add(p);
+
+			return tmpPartList;
+		}
+
+		public static List<Part> DecouplerPartStiffeningListChildren(Part p)
+		{
+			List<Part> tmpPartList = new List<Part>();
+
+			// non-physical parts are skipped over by attachJoints, so do the same
+			bool extend = (p.physicalSignificance == Part.PhysicalSignificance.NONE);
+
+			if(!extend)
+				extend = GetsDecouplerStiffeningExtension(p);
+
+			List<Part> newAdditions = new List<Part>();
+
+			if(extend)
+			{
+				if(p.children != null)
 				{
-					if(p.parent)
-						newAdditions.AddRange(DecouplerPartStiffeningList(p.parent, childrenNotParent, onlyAddLastPart));
+					foreach(Part q in p.children)
+					{
+						if(q != null && q.parent == p && IsJointAdjustmentAllowed(q))
+							newAdditions.AddRange(DecouplerPartStiffeningListChildren(q));
+					}
 				}
 			}
 			else
 			{
 				float thisPartMaxMass = MaximumPossiblePartMass(p);
-				if(childrenNotParent)
-				{
-					if(p.children != null)
-						foreach(Part q in p.children)
+				if(p.children != null)
+					foreach(Part q in p.children)
+					{
+						if(q != null && q.parent == p && IsJointAdjustmentAllowed(q))
 						{
-							if(q != null && q.parent == p)
-							{
-								float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
-								//if(massRatio < 1)
-								//	massRatio = 1 / massRatio;
+							float massRatio = MaximumPossiblePartMass(q) / thisPartMaxMass;
+							//if(massRatio < 1)
+							//	massRatio = 1 / massRatio;
 
-								if(massRatio > stiffeningExtensionMassRatioThreshold)
-								{
-									newAdditions.Add(q);
-									if(debug)
-										Debug.Log("Part " + q.partInfo.title + " added to list due to mass ratio difference");
-								}
+							if(massRatio > stiffeningExtensionMassRatioThreshold)
+							{
+								newAdditions.Add(q);
+								if(debug)
+									Debug.Log("Part " + q.partInfo.title + " added to list due to mass ratio difference");
 							}
 						}
-				}
-				else
-				{
-					if(p.parent)
-					{
-						float massRatio = MaximumPossiblePartMass(p.parent) / thisPartMaxMass;
-						//if(massRatio < 1)
-						//	massRatio = 1 / massRatio;
-
-						if(massRatio > stiffeningExtensionMassRatioThreshold)
-						{
-							newAdditions.Add(p.parent);
-							if(debug)
-								Debug.Log("Part " + p.parent.partInfo.title + " added to list due to mass ratio difference");
-						}
 					}
-				}
 			}
+
 			if(newAdditions.Count > 0)
 				tmpPartList.AddRange(newAdditions);
-			else if(onlyAddLastPart)
+			else
 				extend = false;
 
-			if(!(onlyAddLastPart && extend))
+			if(!extend)
 				tmpPartList.Add(p);
 
 			return tmpPartList;
@@ -415,9 +440,19 @@ namespace KerbalJointReinforcement
 
 		public static ConfigurableJoint BuildJoint(Part p, Part linkPart)
 		{
-			ConfigurableJoint newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+			ConfigurableJoint newJoint;
+			
+			if((p.mass >= linkPart.mass) || (p.rb == null))
+			{
+				newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+				newJoint.connectedBody = linkPart.Rigidbody;
+			}
+			else
+			{
+				newJoint = linkPart.gameObject.AddComponent<ConfigurableJoint>();
+				newJoint.connectedBody = p.Rigidbody;
+			}
 
-			newJoint.connectedBody = linkPart.Rigidbody;
 			newJoint.anchor = Vector3.zero;
 			newJoint.axis = Vector3.right;
 			newJoint.secondaryAxis = Vector3.forward;
