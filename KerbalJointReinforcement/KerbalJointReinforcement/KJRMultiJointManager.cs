@@ -1,7 +1,6 @@
 ﻿/*
-Kerbal Joint Reinforcement, v3.3.3
-Copyright 2015, Michael Ferrara, aka Ferram4
-
+	Developers: Michael Ferrara (aka Ferram4), Meiru
+ 
 	This file is part of Kerbal Joint Reinforcement.
 
 	Kerbal Joint Reinforcement is free software: you can redistribute it and/or modify
@@ -17,6 +16,7 @@ Copyright 2015, Michael Ferrara, aka Ferram4
 	You should have received a copy of the GNU General Public License
 	along with Kerbal Joint Reinforcement.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

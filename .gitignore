@@ -4,6 +4,11 @@
 *.suo
 *.user
 
+build_release_122.bat
+build_release_131.bat
+build_release_141.bat
+/_release/
+
 /KerbalJointReinforcement/KerbalJointReinforcement/bin/
 /KerbalJointReinforcement/KerbalJointReinforcement/obj/
 /KerbalJointReinforcement/KerbalJointReinforcement_Redist/bin/
