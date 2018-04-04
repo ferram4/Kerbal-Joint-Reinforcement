@@ -121,7 +121,7 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 
 v3.4.1  
-	Features
+	Features  
 	--IKJRaware interface removed and replaced with IJointLockState (same as used by KSP for auto struts)  
 	--KJRManager.CycleAllAutoStrut function added (callback for modules to inform KJR about changes, same function like Vessel.CycleAllAutoStrut of KSP)  
 
