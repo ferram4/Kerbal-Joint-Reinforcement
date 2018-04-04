@@ -61,12 +61,6 @@
     <Compile Include="KJRMultiJointManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\KerbalJointReinforcement_Redist\KerbalJointReinforcement_Redist.csproj">
-      <Project>{83C13B00-B58E-4002-A3C3-D97DA42E5A70}</Project>
-      <Name>KerbalJointReinforcement_Redist</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
