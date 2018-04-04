@@ -1,4 +1,4 @@
-Kerbal Joint Reinforcement, v3.4.0
+Kerbal Joint Reinforcement, v3.4.1
 ==========================
 
 Physics stabilizer plugin for Kerbal Space Program
@@ -119,6 +119,11 @@ These types are currently not used, but removing the a in front of them will cau
 ***********************
 ****** CHANGELOG ******
 ***********************
+
+v3.4.1  
+	Features
+	--IKJRaware interface removed and replaced with IJointLockState (same as used by KSP for auto struts)  
+	--KJRManager.CycleAllAutoStrut function added (callback for modules to inform KJR about changes, same function like Vessel.CycleAllAutoStrut of KSP)  
 
 v3.4.0  
 	Features  
