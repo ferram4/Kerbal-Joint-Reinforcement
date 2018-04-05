@@ -8,7 +8,7 @@ md "_release\GameData131\GameData\KerbalJointReinforcement\Plugins"
 md "_release\GameData131\GameData\KerbalJointReinforcement\Plugins\PluginData"
 md "_release\GameData131\GameData\KerbalJointReinforcement\Plugins\PluginData\KerbalJointReinforcement"
 
-copy "GameData\KerbalJointReinforcement\KerbalJointReinforcement_1.3.1.version" "_release\GameData131\GameData\KerbalJointReinforcement\KerbalJointReinforcement.version"
+copy "GameData\KerbalJointReinforcement\KerbalJointReinforcement_1.3.version" "_release\GameData131\GameData\KerbalJointReinforcement\KerbalJointReinforcement.version"
 
 copy "KerbalJointReinforcement\KerbalJointReinforcement\bin\Release 1.3.1\KerbalJointReinforcement.dll" "_release\GameData131\GameData\KerbalJointReinforcement\Plugins\KerbalJointReinforcement.dll"
 
