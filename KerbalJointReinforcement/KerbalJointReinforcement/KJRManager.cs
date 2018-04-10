@@ -271,7 +271,7 @@ namespace KerbalJointReinforcement
                 if(KJRJointUtils.debug)
                 {
                     Debug.Log("KJR: Already processed part before: " + p.partInfo.name + " (" + p.flightID + ") -> " +
-                              p.parent.partInfo.name + " (" + p.parent.flightID + ")");
+                                p.parent.partInfo.name + " (" + p.parent.flightID + ")");
                 }
             }
 
@@ -324,411 +324,405 @@ namespace KerbalJointReinforcement
             //addAdditionalJointToParent &= !(p.Modules.Contains("LaunchClamp") || (p.parent.Modules.Contains("ModuleDecouple") || p.parent.Modules.Contains("ModuleAnchoredDecoupler")));
             addAdditionalJointToParent &= !p.Modules.Contains<CModuleStrut>();
 
-            float partMass = p.mass + p.GetResourceMass();
-            for(int i = 0; i < jointList.Count; i++)
+            if(p.GetComponent<IJointLockState>() == null) // exclude those actions from joints that can be dynamically unlocked
             {
-                ConfigurableJoint j = jointList[i];
-                if(j == null)
-                    continue;
-
-                String jointType = j.GetType().Name;
-                Rigidbody connectedBody = j.connectedBody;
-
-                Part connectedPart = connectedBody.GetComponent<Part>() ?? p.parent;
-                float parentMass = connectedPart.mass + connectedPart.GetResourceMass();
-
-                if(partMass < KJRJointUtils.massForAdjustment || parentMass < KJRJointUtils.massForAdjustment)
+                float partMass = p.mass + p.GetResourceMass();
+                for(int i = 0; i < jointList.Count; i++)
                 {
-                    if(KJRJointUtils.debug)
-                        Debug.Log("KJR: Part mass too low, skipping: " + p.partInfo.name + " (" + p.flightID + ")");
+                    ConfigurableJoint j = jointList[i];
+                    if(j == null)
+                        continue;
 
-                    continue;
-                }                
+                    String jointType = j.GetType().Name;
+                    Rigidbody connectedBody = j.connectedBody;
+
+                    Part connectedPart = connectedBody.GetComponent<Part>() ?? p.parent;
+                    float parentMass = connectedPart.mass + connectedPart.GetResourceMass();
+
+                    if(partMass < KJRJointUtils.massForAdjustment || parentMass < KJRJointUtils.massForAdjustment)
+                    {
+                        if(KJRJointUtils.debug)
+                            Debug.Log("KJR: Part mass too low, skipping: " + p.partInfo.name + " (" + p.flightID + ")");
+
+                        continue;
+                    }                
                 
-                // Check attachment nodes for better orientation data
-                AttachNode attach = p.FindAttachNodeByPart(p.parent);
-                AttachNode p_attach = p.parent.FindAttachNodeByPart(p);
-                AttachNode node = attach ?? p_attach;
+                    // Check attachment nodes for better orientation data
+                    AttachNode attach = p.FindAttachNodeByPart(p.parent);
+                    AttachNode p_attach = p.parent.FindAttachNodeByPart(p);
+                    AttachNode node = attach ?? p_attach;
 
-                if(node == null)
-                {
-                    // Check if it's a pair of coupled docking ports
-                    var dock1 = p.Modules.GetModule<ModuleDockingNode>();
-                    var dock2 = p.parent.Modules.GetModule<ModuleDockingNode>();
-
-                    //Debug.Log(dock1 + " " + (dock1 ? ""+dock1.dockedPartUId : "?") + " " + dock2 + " " + (dock2 ? ""+dock2.dockedPartUId : "?"));
-
-                    if(dock1 && dock2 && (dock1.dockedPartUId == p.parent.flightID || dock2.dockedPartUId == p.flightID))
+                    if(node == null)
                     {
-                        attach = p.FindAttachNode(dock1.referenceAttachNode);
-                        p_attach = p.parent.FindAttachNode(dock2.referenceAttachNode);
-                        node = attach ?? p_attach;
-                    }
-                }
+                        // Check if it's a pair of coupled docking ports
+                        var dock1 = p.Modules.GetModule<ModuleDockingNode>();
+                        var dock2 = p.parent.Modules.GetModule<ModuleDockingNode>();
 
-                // If still no node and apparently surface attached, use the normal one if it's there
-                if(node == null && p.attachMode == AttachModes.SRF_ATTACH)
-                    node = attach = p.srfAttachNode;
+                        //Debug.Log(dock1 + " " + (dock1 ? ""+dock1.dockedPartUId : "?") + " " + dock2 + " " + (dock2 ? ""+dock2.dockedPartUId : "?"));
 
-                if(KJRJointUtils.debug)
-                {
-                    debugString.AppendLine("Original joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
-                    debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
-                    debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
-                    debugString.AppendLine("");
-
-
-                    debugString.AppendLine("Std. Joint Parameters");
-                    debugString.AppendLine("Connected Body: " + p.attachJoint.Joint.connectedBody);
-                    debugString.AppendLine("Attach mode: " + p.attachMode + " (was " + jointType + ")");
-                    if(attach != null)
-                        debugString.AppendLine("Attach node: " + attach.id + " - " + attach.nodeType + " " + attach.size);
-                    if(p_attach != null)
-                        debugString.AppendLine("Parent node: " + p_attach.id + " - " + p_attach.nodeType + " " + p_attach.size);
-                    debugString.AppendLine("Anchor: " + p.attachJoint.Joint.anchor);
-                    debugString.AppendLine("Axis: " + p.attachJoint.Joint.axis);
-                    debugString.AppendLine("Sec Axis: " + p.attachJoint.Joint.secondaryAxis);
-                    debugString.AppendLine("Break Force: " + p.attachJoint.Joint.breakForce);
-                    debugString.AppendLine("Break Torque: " + p.attachJoint.Joint.breakTorque);
-                    debugString.AppendLine("");
-
-                    debugString.AppendLine("Joint Motion Locked: " + Convert.ToString(p.attachJoint.Joint.xMotion == ConfigurableJointMotion.Locked));
-
-                    debugString.AppendLine("X Drive");
-                    debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.xDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.xDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + p.attachJoint.Joint.xDrive.maximumForce);
-                    debugString.AppendLine("");
-
-                    debugString.AppendLine("Y Drive");
-                    debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.yDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.yDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + p.attachJoint.Joint.yDrive.maximumForce);
-                    debugString.AppendLine("");
-
-                    debugString.AppendLine("Z Drive");
-                    debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.zDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.zDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + p.attachJoint.Joint.zDrive.maximumForce);
-                    debugString.AppendLine("");
-
-                    debugString.AppendLine("Angular X Drive");
-                    debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularXDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularXDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularXDrive.maximumForce);
-                    debugString.AppendLine("");
-
-                    debugString.AppendLine("Angular YZ Drive");
-                    debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularYZDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularYZDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularYZDrive.maximumForce);
-                    debugString.AppendLine("");
-
-
-                    //Debug.Log(debugString.ToString());
-                }
-
-
-                float breakForce = Math.Min(p.breakingForce, connectedPart.breakingForce) * KJRJointUtils.breakForceMultiplier;
-                float breakTorque = Math.Min(p.breakingTorque, connectedPart.breakingTorque) * KJRJointUtils.breakTorqueMultiplier;
-                Vector3 anchor = j.anchor;
-                Vector3 connectedAnchor = j.connectedAnchor;
-                Vector3 axis = j.axis;
-
-                float radius = 0;
-                float area = 0;
-                float momentOfInertia = 0;
-
-                if(node != null)
-                {
-                    // Part that owns the node. For surface attachment,
-                    // this can only be parent if docking flips hierarchy.
-                    Part main = (node == attach) ? p : p.parent;
-
-                    // Orientation and position of the node in owner's local coords
-                    Vector3 ndir = node.orientation.normalized;
-                    Vector3 npos = node.position + node.offset;
-
-                    // And in the current part's local coords
-                    Vector3 dir = axis = p.transform.InverseTransformDirection(main.transform.TransformDirection(ndir));
-
-                    if(node.nodeType == AttachNode.NodeType.Surface)
-                    {
-                        // Guessed main axis; for parts with stack nodes should be the axis of the stack
-                        Vector3 up = KJRJointUtils.GuessUpVector(main).normalized;
-
-                        // if guessed up direction is same as node direction, it's basically stack
-                        // for instance, consider a radially-attached docking port
-                        if(Mathf.Abs(Vector3.Dot(up, ndir)) > 0.9f)
+                        if(dock1 && dock2 && (dock1.dockedPartUId == p.parent.flightID || dock2.dockedPartUId == p.flightID))
                         {
-                            radius = Mathf.Min(KJRJointUtils.CalculateRadius(main, ndir), KJRJointUtils.CalculateRadius(connectedPart, ndir));
+                            attach = p.FindAttachNode(dock1.referenceAttachNode);
+                            p_attach = p.parent.FindAttachNode(dock2.referenceAttachNode);
+                            node = attach ?? p_attach;
+                        }
+                    }
+
+                    // If still no node and apparently surface attached, use the normal one if it's there
+                    if(node == null && p.attachMode == AttachModes.SRF_ATTACH)
+                        node = attach = p.srfAttachNode;
+
+                    if(KJRJointUtils.debug)
+                    {
+                        debugString.AppendLine("Original joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
+                        debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
+                        debugString.AppendLine("");
+                        debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                        debugString.AppendLine("");
+
+
+                        debugString.AppendLine("Std. Joint Parameters");
+                        debugString.AppendLine("Connected Body: " + p.attachJoint.Joint.connectedBody);
+                        debugString.AppendLine("Attach mode: " + p.attachMode + " (was " + jointType + ")");
+                        if(attach != null)
+                            debugString.AppendLine("Attach node: " + attach.id + " - " + attach.nodeType + " " + attach.size);
+                        if(p_attach != null)
+                            debugString.AppendLine("Parent node: " + p_attach.id + " - " + p_attach.nodeType + " " + p_attach.size);
+                        debugString.AppendLine("Anchor: " + p.attachJoint.Joint.anchor);
+                        debugString.AppendLine("Axis: " + p.attachJoint.Joint.axis);
+                        debugString.AppendLine("Sec Axis: " + p.attachJoint.Joint.secondaryAxis);
+                        debugString.AppendLine("Break Force: " + p.attachJoint.Joint.breakForce);
+                        debugString.AppendLine("Break Torque: " + p.attachJoint.Joint.breakTorque);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Joint Motion Locked: " + Convert.ToString(p.attachJoint.Joint.xMotion == ConfigurableJointMotion.Locked));
+
+                        debugString.AppendLine("X Drive");
+                        debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.xDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.xDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + p.attachJoint.Joint.xDrive.maximumForce);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Y Drive");
+                        debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.yDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.yDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + p.attachJoint.Joint.yDrive.maximumForce);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Z Drive");
+                        debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.zDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.zDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + p.attachJoint.Joint.zDrive.maximumForce);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Angular X Drive");
+                        debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularXDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularXDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularXDrive.maximumForce);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Angular YZ Drive");
+                        debugString.AppendLine("Position Spring: " + p.attachJoint.Joint.angularYZDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + p.attachJoint.Joint.angularYZDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + p.attachJoint.Joint.angularYZDrive.maximumForce);
+                        debugString.AppendLine("");
+
+
+                        //Debug.Log(debugString.ToString());
+                    }
+
+
+                    float breakForce = Math.Min(p.breakingForce, connectedPart.breakingForce) * KJRJointUtils.breakForceMultiplier;
+                    float breakTorque = Math.Min(p.breakingTorque, connectedPart.breakingTorque) * KJRJointUtils.breakTorqueMultiplier;
+                    Vector3 anchor = j.anchor;
+                    Vector3 connectedAnchor = j.connectedAnchor;
+                    Vector3 axis = j.axis;
+
+                    float radius = 0;
+                    float area = 0;
+                    float momentOfInertia = 0;
+
+                    if(node != null)
+                    {
+                        // Part that owns the node. For surface attachment,
+                        // this can only be parent if docking flips hierarchy.
+                        Part main = (node == attach) ? p : p.parent;
+
+                        // Orientation and position of the node in owner's local coords
+                        Vector3 ndir = node.orientation.normalized;
+                        Vector3 npos = node.position + node.offset;
+
+                        // And in the current part's local coords
+                        Vector3 dir = axis = p.transform.InverseTransformDirection(main.transform.TransformDirection(ndir));
+
+                        if(node.nodeType == AttachNode.NodeType.Surface)
+                        {
+                            // Guessed main axis; for parts with stack nodes should be the axis of the stack
+                            Vector3 up = KJRJointUtils.GuessUpVector(main).normalized;
+
+                            // if guessed up direction is same as node direction, it's basically stack
+                            // for instance, consider a radially-attached docking port
+                            if(Mathf.Abs(Vector3.Dot(up, ndir)) > 0.9f)
+                            {
+                                radius = Mathf.Min(KJRJointUtils.CalculateRadius(main, ndir), KJRJointUtils.CalculateRadius(connectedPart, ndir));
+                                if(radius <= 0.001)
+                                    radius = node.size * 1.25f;
+                                area = Mathf.PI * radius * radius;                      //Area of cylinder
+                                momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
+                            }
+                            else
+                            {
+                                // x along surface, y along ndir normal to surface, z along surface & main axis (up)
+                                var size1 = KJRJointUtils.CalculateExtents(main, ndir, up);
+
+                                var size2 = KJRJointUtils.CalculateExtents(connectedPart, ndir, up);
+
+                                // use average of the sides, since we don't know which one is used for attaching
+                                float width1 = (size1.x + size1.z) / 2;
+                                float width2 = (size2.x + size2.z) / 2;
+                                if(size1.y * width1 > size2.y * width2)
+                                {
+                                    area = size1.y * width1;
+                                    radius = Mathf.Max(size1.y, width1);
+                                }
+                                else
+                                {
+                                    area = size2.y * width2;
+                                    radius = Mathf.Max(size2.y, width2);
+                                }
+
+                                momentOfInertia = area * radius / 12;          //Moment of Inertia of a rectangle bending along the longer length
+                            }
+                        }
+                        else
+                        {
+                            radius = Mathf.Min(KJRJointUtils.CalculateRadius(p, dir), KJRJointUtils.CalculateRadius(connectedPart, dir));
                             if(radius <= 0.001)
                                 radius = node.size * 1.25f;
                             area = Mathf.PI * radius * radius;                      //Area of cylinder
                             momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
                         }
-                        else
-                        {
-                            // x along surface, y along ndir normal to surface, z along surface & main axis (up)
-                            var size1 = KJRJointUtils.CalculateExtents(main, ndir, up);
-
-                            var size2 = KJRJointUtils.CalculateExtents(connectedPart, ndir, up);
-
-                            // use average of the sides, since we don't know which one is used for attaching
-                            float width1 = (size1.x + size1.z) / 2;
-                            float width2 = (size2.x + size2.z) / 2;
-                            if(size1.y * width1 > size2.y * width2)
-                            {
-                                area = size1.y * width1;
-                                radius = Mathf.Max(size1.y, width1);
-                            }
-                            else
-                            {
-                                area = size2.y * width2;
-                                radius = Mathf.Max(size2.y, width2);
-                            }
-
-                            momentOfInertia = area * radius / 12;          //Moment of Inertia of a rectangle bending along the longer length
-                        }
                     }
-                    else
+                    //Assume part is attached along its "up" cross section; use a cylinder to approximate properties
+                    else if(p.attachMode == AttachModes.STACK)
                     {
-                        radius = Mathf.Min(KJRJointUtils.CalculateRadius(p, dir), KJRJointUtils.CalculateRadius(connectedPart, dir));
+                        radius = Mathf.Min(KJRJointUtils.CalculateRadius(p, Vector3.up), KJRJointUtils.CalculateRadius(connectedPart, Vector3.up));
                         if(radius <= 0.001)
                             radius = node.size * 1.25f;
                         area = Mathf.PI * radius * radius;                      //Area of cylinder
                         momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
                     }
-                }
-                //Assume part is attached along its "up" cross section; use a cylinder to approximate properties
-                else if(p.attachMode == AttachModes.STACK)
-                {
-                    radius = Mathf.Min(KJRJointUtils.CalculateRadius(p, Vector3.up), KJRJointUtils.CalculateRadius(connectedPart, Vector3.up));
-                    if(radius <= 0.001)
-                        radius = node.size * 1.25f;
-                    area = Mathf.PI * radius * radius;                      //Area of cylinder
-                    momentOfInertia = area * radius * radius / 4;           //Moment of Inertia of cylinder
-                }
-                else if(p.attachMode == AttachModes.SRF_ATTACH)
-                {                    
-                    // x,z sides, y along main axis
-                    Vector3 up1 = KJRJointUtils.GuessUpVector(p);
-                    var size1 = KJRJointUtils.CalculateExtents(p, up1);
+                    else if(p.attachMode == AttachModes.SRF_ATTACH)
+                    {                    
+                        // x,z sides, y along main axis
+                        Vector3 up1 = KJRJointUtils.GuessUpVector(p);
+                        var size1 = KJRJointUtils.CalculateExtents(p, up1);
 
-                    Vector3 up2 = KJRJointUtils.GuessUpVector(connectedPart);
-                    var size2 = KJRJointUtils.CalculateExtents(connectedPart, up2);
+                        Vector3 up2 = KJRJointUtils.GuessUpVector(connectedPart);
+                        var size2 = KJRJointUtils.CalculateExtents(connectedPart, up2);
 
-                    // use average of the sides, since we don't know which one is used for attaching
-                    float width1 = (size1.x + size1.z) / 2;
-                    float width2 = (size2.x + size2.z) / 2;
-                    if(size1.y * width1 > size2.y * width2)
-                    {
-                        area = size1.y * width1;
-                        radius = Mathf.Max(size1.y, width1);
+                        // use average of the sides, since we don't know which one is used for attaching
+                        float width1 = (size1.x + size1.z) / 2;
+                        float width2 = (size2.x + size2.z) / 2;
+                        if(size1.y * width1 > size2.y * width2)
+                        {
+                            area = size1.y * width1;
+                            radius = Mathf.Max(size1.y, width1);
+                        }
+                        else
+                        {
+                            area = size2.y * width2;
+                            radius = Mathf.Max(size2.y, width2);
+                        }
+                        momentOfInertia = area * radius / 12;          //Moment of Inertia of a rectangle bending along the longer length
                     }
+
+                    if(KJRJointUtils.useVolumeNotArea)                //If using volume, raise al stiffness-affecting parameters to the 1.5 power
+                    {
+                        area = Mathf.Pow(area, 1.5f);
+                        momentOfInertia = Mathf.Pow(momentOfInertia, 1.5f);
+                    }
+
+
+                    breakForce = Mathf.Max(KJRJointUtils.breakStrengthPerArea * area, breakForce);
+                    breakTorque = Mathf.Max(KJRJointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
+
+                    JointDrive angDrive = j.angularXDrive;
+                    angDrive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, angDrive.positionSpring);
+                    angDrive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper * 0.1f, angDrive.positionDamper);
+                    angDrive.maximumForce = breakTorque;
+                    /*float moi_avg = p.rb.inertiaTensor.magnitude;
+
+                    moi_avg += (p.transform.localToWorldMatrix.MultiplyPoint(p.CoMOffset) - p.parent.transform.position).sqrMagnitude * p.rb.mass;
+
+                    if(moi_avg * 2f / drive.positionDamper < 0.08f)
+                    {
+                        drive.positionDamper = moi_avg / (0.04f);
+
+                        drive.positionSpring = drive.positionDamper * drive.positionDamper / moi_avg;
+                    }*/
+                    j.angularXDrive = j.angularYZDrive = j.slerpDrive = angDrive;
+
+                    JointDrive linDrive = j.xDrive;
+                    linDrive.maximumForce = breakForce;
+                    j.xDrive = j.yDrive = j.zDrive = linDrive;
+
+                    j.linearLimit = j.angularYLimit = j.angularZLimit = j.lowAngularXLimit = j.highAngularXLimit
+                        = new SoftJointLimit { limit = 0, bounciness = 0 };
+                    j.linearLimitSpring = j.angularYZLimitSpring = j.angularXLimitSpring
+                        = new SoftJointLimitSpring { spring = 0, damper = 0 };
+
+                    j.targetAngularVelocity = Vector3.zero;
+                    j.targetVelocity = Vector3.zero;
+                    j.targetRotation = Quaternion.identity;
+                    j.targetPosition = Vector3.zero;
+
+                    j.breakForce = breakForce;
+                    j.breakTorque = breakTorque;
+                    p.attachJoint.SetBreakingForces(j.breakForce, j.breakTorque);
+
+                    p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
+
+                    if(KJRJointUtils.debug)
+                    {
+                        debugString.AppendLine("Updated joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
+                        debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
+                        debugString.AppendLine("");
+                        debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
+                        debugString.AppendLine("");
+
+
+                        debugString.AppendLine("Std. Joint Parameters");
+                        debugString.AppendLine("Connected Body: " + p.attachJoint.Joint.connectedBody);
+                        debugString.AppendLine("Attach mode: " + p.attachMode + " (was " + jointType + ")");
+                        if(attach != null)
+                            debugString.AppendLine("Attach node: " + attach.id + " - " + attach.nodeType + " " + attach.size);
+                        if(p_attach != null)
+                            debugString.AppendLine("Parent node: " + p_attach.id + " - " + p_attach.nodeType + " " + p_attach.size);
+                        debugString.AppendLine("Anchor: " + p.attachJoint.Joint.anchor);
+                        debugString.AppendLine("Axis: " + p.attachJoint.Joint.axis);
+                        debugString.AppendLine("Sec Axis: " + p.attachJoint.Joint.secondaryAxis);
+                        debugString.AppendLine("Break Force: " + p.attachJoint.Joint.breakForce);
+                        debugString.AppendLine("Break Torque: " + p.attachJoint.Joint.breakTorque);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Joint Motion Locked: " + Convert.ToString(p.attachJoint.Joint.xMotion == ConfigurableJointMotion.Locked));
+
+                        debugString.AppendLine("Angular Drive");
+                        debugString.AppendLine("Position Spring: " + angDrive.positionSpring);
+                        debugString.AppendLine("Position Damper: " + angDrive.positionDamper);
+                        debugString.AppendLine("Max Force: " + angDrive.maximumForce);
+                        debugString.AppendLine("");
+
+                        debugString.AppendLine("Cross Section Properties");
+                        debugString.AppendLine("Radius: " + radius);
+                        debugString.AppendLine("Area: " + area);
+                        debugString.AppendLine("Moment of Inertia: " + momentOfInertia);
+                    }
+                }
+            }
+
+            if(addAdditionalJointToParent && p.parent.parent != null
+            && KJRJointUtils.IsJointAdjustmentAllowed(p.parent)          // verify that parent is not an excluded part
+            && KJRJointUtils.IsJointAdjustmentAllowed(p.parent.parent))  // verify that parent of parent (our target part) is not an excluded part
+            {
+                /*if(ValidDecoupler(p) || ValidDecoupler(p.parent))
+                    continue;*/
+
+                ConfigurableJoint j = p.attachJoint.Joint; // second steps uses the first/main joint as reference
+
+                Part newConnectedPart = p.parent.parent;
+
+                bool massRatioBelowThreshold = false;
+                int numPartsFurther = 0;
+
+                float partMaxMass = KJRJointUtils.MaximumPossiblePartMass(p);
+                List<Part> partsCrossed = new List<Part>();
+                List<Part> possiblePartsCrossed = new List<Part>();
+
+                partsCrossed.Add(p);
+                partsCrossed.Add(p.parent);
+                partsCrossed.Add(newConnectedPart);
+
+                Rigidbody connectedRb = newConnectedPart.rb;
+
+                // search the first part with an acceptable mass/mass ration to this part (joints work better then)
+                do
+                {
+                    float massRat1 = (partMaxMass < newConnectedPart.mass) ? (newConnectedPart.mass / partMaxMass) : (partMaxMass / newConnectedPart.mass);
+
+                    if(massRat1 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
+                        massRatioBelowThreshold = true;
                     else
                     {
-                        area = size2.y * width2;
-                        radius = Mathf.Max(size2.y, width2);
-                    }
-                    momentOfInertia = area * radius / 12;          //Moment of Inertia of a rectangle bending along the longer length
-                }
-
-                if(KJRJointUtils.useVolumeNotArea)                //If using volume, raise al stiffness-affecting parameters to the 1.5 power
-                {
-                    area = Mathf.Pow(area, 1.5f);
-                    momentOfInertia = Mathf.Pow(momentOfInertia, 1.5f);
-                }
-
-
-                breakForce = Mathf.Max(KJRJointUtils.breakStrengthPerArea * area, breakForce);
-                breakTorque = Mathf.Max(KJRJointUtils.breakTorquePerMOI * momentOfInertia, breakTorque);
-
-                JointDrive angDrive = j.angularXDrive;
-                angDrive.positionSpring = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveSpring, angDrive.positionSpring);
-                angDrive.positionDamper = Mathf.Max(momentOfInertia * KJRJointUtils.angularDriveDamper * 0.1f, angDrive.positionDamper);
-                angDrive.maximumForce = breakTorque;
-                /*float moi_avg = p.rb.inertiaTensor.magnitude;
-
-                moi_avg += (p.transform.localToWorldMatrix.MultiplyPoint(p.CoMOffset) - p.parent.transform.position).sqrMagnitude * p.rb.mass;
-
-                if(moi_avg * 2f / drive.positionDamper < 0.08f)
-                {
-                    drive.positionDamper = moi_avg / (0.04f);
-
-                    drive.positionSpring = drive.positionDamper * drive.positionDamper / moi_avg;
-                }*/
-                j.angularXDrive = j.angularYZDrive = j.slerpDrive = angDrive;
-
-                JointDrive linDrive = j.xDrive;
-                linDrive.maximumForce = breakForce;
-                j.xDrive = j.yDrive = j.zDrive = linDrive;
-
-                SoftJointLimit lim = new SoftJointLimit();
-                lim.limit = 0;
-                lim.bounciness = 0;
-
-                SoftJointLimitSpring limSpring = new SoftJointLimitSpring();
-
-                limSpring.spring = 0;
-                limSpring.damper = 0;
-
-                j.linearLimit = j.angularYLimit = j.angularZLimit = j.lowAngularXLimit = j.highAngularXLimit = lim;
-                j.linearLimitSpring = j.angularYZLimitSpring = j.angularXLimitSpring = limSpring;
-
-                j.targetAngularVelocity = Vector3.zero;
-                j.targetVelocity = Vector3.zero;
-                j.targetRotation = Quaternion.identity;
-                j.targetPosition = Vector3.zero;
-
-                j.breakForce = breakForce;
-                j.breakTorque = breakTorque;
-                p.attachJoint.SetBreakingForces(j.breakForce, j.breakTorque);
-
-                p.attachMethod = AttachNodeMethod.LOCKED_JOINT;
-
-                if(addAdditionalJointToParent && p.parent.parent != null)
-                {
-                    /*if(ValidDecoupler(p) || ValidDecoupler(p.parent))
-                        continue;*/
-
-                    addAdditionalJointToParent = false;
-
-                    // verify that parent and parent of parent (our target part) is not an excluded part
-                    if(!KJRJointUtils.IsJointAdjustmentAllowed(p.parent)
-                    || !KJRJointUtils.IsJointAdjustmentAllowed(p.parent.parent))
-                        continue;
-
-                    Part newConnectedPart = p.parent.parent;
-
-                    bool massRatioBelowThreshold = false;
-                    int numPartsFurther = 0;
-
-                    float partMaxMass = KJRJointUtils.MaximumPossiblePartMass(p);
-                    List<Part> partsCrossed = new List<Part>();
-                    List<Part> possiblePartsCrossed = new List<Part>();
-
-                    partsCrossed.Add(p);
-                    partsCrossed.Add(p.parent);
-                    partsCrossed.Add(newConnectedPart);
-
-                    Rigidbody connectedRb = newConnectedPart.rb;
-
-                    // search the first part with an acceptable mass/mass ration to this part (joints work better
-                    do
-                    {
-                        float massRat1 = (partMaxMass < newConnectedPart.mass) ? (newConnectedPart.mass / partMaxMass) : (partMaxMass / newConnectedPart.mass);
-
-                        if(massRat1 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
+                        float maxMass = KJRJointUtils.MaximumPossiblePartMass(newConnectedPart);
+                        float massRat2 = (p.mass < maxMass) ? (maxMass / p.mass) : (p.mass / maxMass);
+                        
+                        if(massRat2 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
                             massRatioBelowThreshold = true;
                         else
                         {
-                            float maxMass = KJRJointUtils.MaximumPossiblePartMass(newConnectedPart);
-                            float massRat2 = (p.mass < maxMass) ? (maxMass / p.mass) : (p.mass / maxMass);
-                        
-                            if(massRat2 <= KJRJointUtils.stiffeningExtensionMassRatioThreshold)
-                                massRatioBelowThreshold = true;
+                            if((newConnectedPart.parent == null)
+                            || !KJRJointUtils.IsJointAdjustmentAllowed(newConnectedPart.parent))
+                                break;
+
+                            newConnectedPart = newConnectedPart.parent;
+
+                            if(newConnectedPart.rb == null)
+                                possiblePartsCrossed.Add(newConnectedPart);
                             else
                             {
-                                if((newConnectedPart.parent == null)
-                                || !KJRJointUtils.IsJointAdjustmentAllowed(newConnectedPart.parent))
-                                    break;
-
-                                newConnectedPart = newConnectedPart.parent;
-
-                                if(newConnectedPart.rb == null)
-                                    possiblePartsCrossed.Add(newConnectedPart);
-                                else
-                                {
-                                    connectedRb = newConnectedPart.rb;
-                                    partsCrossed.AddRange(possiblePartsCrossed);
-                                    partsCrossed.Add(newConnectedPart);
-                                    possiblePartsCrossed.Clear();
-                                }
-
-                                numPartsFurther++;
+                                connectedRb = newConnectedPart.rb;
+                                partsCrossed.AddRange(possiblePartsCrossed);
+                                partsCrossed.Add(newConnectedPart);
+                                possiblePartsCrossed.Clear();
                             }
+
+                            numPartsFurther++;
                         }
-
-                    } while(!massRatioBelowThreshold);// && numPartsFurther < 5);
-
-                    if(connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
-                    {
-                        ConfigurableJoint newJoint;
-
-                        if((p.mass >= newConnectedPart.mass) || (p.rb == null))
-                        {
-                            newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
-                            newJoint.connectedBody = connectedRb;
-                        }
-                        else
-                        {
-                            newJoint = connectedRb.gameObject.AddComponent<ConfigurableJoint>();
-                            newJoint.connectedBody = p.rb;
-                        }
-
-                        newJoint.axis = Vector3.right;
-                        newJoint.secondaryAxis = Vector3.forward;
-
-                        newJoint.anchor = Vector3.zero;
-                    //    newJoint.autoConfigureConnectedAnchor = false;
-                    //    newJoint.connectedAnchor = newJoint.connectedBody.transform.InverseTransformPoint(newJoint.transform.position);
-
-                        newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = j.angularXDrive;
-
-                        newJoint.xDrive = j.xDrive;
-                        newJoint.yDrive = j.yDrive;
-                        newJoint.zDrive = j.zDrive;
-
-                        newJoint.linearLimit = newJoint.angularYLimit = newJoint.angularZLimit = newJoint.lowAngularXLimit = newJoint.highAngularXLimit = lim;
-
-                        newJoint.breakForce = breakForce;
-                        newJoint.breakTorque = breakTorque;
-
-                        for(int k = 0; k < partsCrossed.Count; k++)
-                            multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
                     }
-                }
 
-                if(KJRJointUtils.debug)
+                } while(!massRatioBelowThreshold);// && numPartsFurther < 5);
+
+                if(connectedRb != null && !multiJointManager.CheckMultiJointBetweenParts(p, newConnectedPart))
                 {
-                    debugString.AppendLine("Updated joint from " + p.partInfo.title + " to " + p.parent.partInfo.title);
-                    debugString.AppendLine("  " + p.partInfo.name + " (" + p.flightID + ") -> " + p.parent.partInfo.name + " (" + p.parent.flightID + ")");
-                    debugString.AppendLine("");
-                    debugString.AppendLine(p.partInfo.title + " Inertia Tensor: " + p.rb.inertiaTensor + " " + p.parent.partInfo.name + " Inertia Tensor: " + connectedBody.inertiaTensor);
-                    debugString.AppendLine("");
+                    ConfigurableJoint newJoint;
 
+                    if((p.mass >= newConnectedPart.mass) || (p.rb == null))
+                    {
+                        newJoint = p.gameObject.AddComponent<ConfigurableJoint>();
+                        newJoint.connectedBody = connectedRb;
+                    }
+                    else
+                    {
+                        newJoint = connectedRb.gameObject.AddComponent<ConfigurableJoint>();
+                        newJoint.connectedBody = p.rb;
+                    }
 
-                    debugString.AppendLine("Std. Joint Parameters");
-                    debugString.AppendLine("Connected Body: " + p.attachJoint.Joint.connectedBody);
-                    debugString.AppendLine("Attach mode: " + p.attachMode + " (was " + jointType + ")");
-                    if(attach != null)
-                        debugString.AppendLine("Attach node: " + attach.id + " - " + attach.nodeType + " " + attach.size);
-                    if(p_attach != null)
-                        debugString.AppendLine("Parent node: " + p_attach.id + " - " + p_attach.nodeType + " " + p_attach.size);
-                    debugString.AppendLine("Anchor: " + p.attachJoint.Joint.anchor);
-                    debugString.AppendLine("Axis: " + p.attachJoint.Joint.axis);
-                    debugString.AppendLine("Sec Axis: " + p.attachJoint.Joint.secondaryAxis);
-                    debugString.AppendLine("Break Force: " + p.attachJoint.Joint.breakForce);
-                    debugString.AppendLine("Break Torque: " + p.attachJoint.Joint.breakTorque);
-                    debugString.AppendLine("");
+                    newJoint.axis = Vector3.right;
+                    newJoint.secondaryAxis = Vector3.forward;
 
-                    debugString.AppendLine("Joint Motion Locked: " + Convert.ToString(p.attachJoint.Joint.xMotion == ConfigurableJointMotion.Locked));
+                    newJoint.anchor = Vector3.zero;
+                //  newJoint.autoConfigureConnectedAnchor = false;
+                //  newJoint.connectedAnchor = newJoint.connectedBody.transform.InverseTransformPoint(newJoint.transform.position);
 
-                    debugString.AppendLine("Angular Drive");
-                    debugString.AppendLine("Position Spring: " + angDrive.positionSpring);
-                    debugString.AppendLine("Position Damper: " + angDrive.positionDamper);
-                    debugString.AppendLine("Max Force: " + angDrive.maximumForce);
-                    debugString.AppendLine("");
+                    newJoint.angularXDrive = newJoint.angularYZDrive = newJoint.slerpDrive = j.angularXDrive;
 
-                    debugString.AppendLine("Cross Section Properties");
-                    debugString.AppendLine("Radius: " + radius);
-                    debugString.AppendLine("Area: " + area);
-                    debugString.AppendLine("Moment of Inertia: " + momentOfInertia);
+                    newJoint.xDrive = j.xDrive;
+                    newJoint.yDrive = j.yDrive;
+                    newJoint.zDrive = j.zDrive;
 
+                    newJoint.linearLimit = newJoint.angularYLimit = newJoint.angularZLimit = newJoint.lowAngularXLimit = newJoint.highAngularXLimit
+                        = new SoftJointLimit { limit = 0, bounciness = 0 };
+
+                    newJoint.breakForce = j.breakForce;
+                    newJoint.breakTorque = j.breakTorque;
+
+                    for(int k = 0; k < partsCrossed.Count; k++)
+                        multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
                 }
             }
+
             if(KJRJointUtils.debug)
                 Debug.Log(debugString.ToString());
         }
