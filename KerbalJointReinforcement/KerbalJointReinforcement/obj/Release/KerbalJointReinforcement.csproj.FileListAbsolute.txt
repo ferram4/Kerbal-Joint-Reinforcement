@@ -39,3 +39,4 @@ Z:\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\
 Z:\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\bin\Release\RedShellSDK.dll
 Z:\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\obj\Release\KerbalJointReinforcement.dll
 Z:\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\obj\Release\KerbalJointReinforcement.pdb
+Z:\Kerbal-Joint-Reinforcement\KerbalJointReinforcement\KerbalJointReinforcement\obj\Release\KerbalJointReinforcement.csprojResolveAssemblyReference.cache
