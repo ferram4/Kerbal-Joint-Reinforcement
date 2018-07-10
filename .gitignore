@@ -1,6 +1,7 @@
 *.vspscc
 *.vssscc
 *.scc
+
 *.suo
 *.user
 
@@ -10,5 +11,4 @@
 
 /KerbalJointReinforcement/KerbalJointReinforcement/bin/
 /KerbalJointReinforcement/KerbalJointReinforcement/obj/
-/KerbalJointReinforcement/KerbalJointReinforcement_Redist/bin/
-/KerbalJointReinforcement/KerbalJointReinforcement_Redist/obj/
+

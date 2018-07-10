@@ -27,21 +27,28 @@ namespace KerbalJointReinforcement
     //All this class exists to do is to act as a box attached to 
     //For a sequence of three parts (A, B, C), connected in series, this will exist on B and hold the strengthening joint from A to C
     //If the joint from A to B or B to C is broken, this will destroy the joint A to C and then destroy itself
-    class KJRMultiJointManager
+    internal class KJRMultiJointManager
     {
+		internal enum Reason
+		{
+			None, AdditionalJointToParent, MultiPartJointTreeChildren, MultiPartJointTreeChildrenRoot
+		};
+
         Dictionary<Part, List<ConfigurableJoint>> multiJointDict;
         List<Part> linkedSet;
         List<Part> tempPartList;
+
+		Dictionary<ConfigurableJoint, Reason> jointReasonDict;
 
         public KJRMultiJointManager()
         {
             multiJointDict = new Dictionary<Part, List<ConfigurableJoint>>();
             linkedSet = new List<Part>();
             tempPartList = new List<Part>();
+			jointReasonDict = new Dictionary<ConfigurableJoint,Reason>();
         }
 
-        // we remove all the joints and rebuild them later for this ship (so, no real "verify")
-        public void VerifyVesselJoints(Vessel v)
+        public void RemoveAllVesselJoints(Vessel v)
         {
             if(v.loaded)
             {
@@ -81,13 +88,13 @@ namespace KerbalJointReinforcement
             return linkedSet.Count > 1;
         }
 
-        public void RegisterMultiJointBetweenParts(Part linkPart1, Part linkPart2, ConfigurableJoint multiJoint)
+        public void RegisterMultiJointBetweenParts(Part linkPart1, Part linkPart2, ConfigurableJoint multiJoint, Reason jointReason)
         {
             foreach(Part p in linkedSet)
-                RegisterMultiJoint(p, multiJoint);
+                RegisterMultiJoint(p, multiJoint, jointReason);
         }
 
-        public void RegisterMultiJoint(Part testPart, ConfigurableJoint multiJoint)
+        public void RegisterMultiJoint(Part testPart, ConfigurableJoint multiJoint, Reason jointReason)
         {
             List<ConfigurableJoint> configJointList;
             if(multiJointDict.TryGetValue(testPart, out configJointList))
@@ -104,6 +111,9 @@ namespace KerbalJointReinforcement
                 configJointList.Add(multiJoint);
                 multiJointDict.Add(testPart, configJointList);
             }
+
+			if(!jointReasonDict.ContainsKey(multiJoint))
+				jointReasonDict.Add(multiJoint, jointReason);
         }
 
         public bool CheckMultiJointBetweenParts(Part testPart1, Part testPart2)
@@ -145,6 +155,9 @@ namespace KerbalJointReinforcement
                 for(int i = 0; i < configJointList.Count; i++)
                 {
                     ConfigurableJoint joint = configJointList[i];
+	
+					jointReasonDict.Remove(joint);
+
                     if(joint != null)
                         GameObject.Destroy(joint);
                 }
@@ -152,5 +165,33 @@ namespace KerbalJointReinforcement
                 multiJointDict.Remove(part);
             }
         }
+
+#if IncludeAnalyzer
+		internal ConfigurableJoint[] GetAllJoints()
+		{
+			HashSet<ConfigurableJoint> l = new HashSet<ConfigurableJoint>();
+
+	        Dictionary<Part, List<ConfigurableJoint>>.Enumerator e = multiJointDict.GetEnumerator();
+
+			while(e.MoveNext())
+			{
+				List<ConfigurableJoint> j = e.Current.Value;
+
+				for(int a = 0; a < j.Count; a++)
+					l.Add(j[a]);
+			}
+
+			return l.ToArray();
+		}
+#endif
+
+		internal Reason GetJointReason(ConfigurableJoint joint)
+		{
+            Reason jointReason;
+            if(jointReasonDict.TryGetValue(joint, out jointReason))
+				return jointReason;
+
+			return Reason.None;
+		}
     }
 }

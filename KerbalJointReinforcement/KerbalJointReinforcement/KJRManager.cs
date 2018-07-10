@@ -29,17 +29,33 @@ namespace KerbalJointReinforcement
     public class KJRManager : MonoBehaviour
     {
         List<Vessel> updatedVessels;
-        HashSet<Vessel> vesselOffRails;
+        HashSet<Vessel> easingVessels;
         Dictionary<Vessel, List<Joint>> vesselJointStrengthened;
-        KJRMultiJointManager multiJointManager;
+		KJRMultiJointManager multiJointManager;
+
+#if IncludeAnalyzer
+		private static KJRManager _instance;
+
+		internal static KJRManager Instance
+		{
+			get { return _instance; }
+		}
+#endif
+
+		internal KJRMultiJointManager GetMultiJointManager()
+		{
+			return multiJointManager;
+		}
 
         public void Awake()
         {
             KJRJointUtils.LoadConstants();
             updatedVessels = new List<Vessel>();
-            vesselOffRails = new HashSet<Vessel>();
+			easingVessels = new HashSet<Vessel>();
             vesselJointStrengthened = new Dictionary<Vessel, List<Joint>>();
             multiJointManager = new KJRMultiJointManager();
+
+			_instance = this;
         }
 
         public void Start()
@@ -49,6 +65,7 @@ namespace KerbalJointReinforcement
 
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+			GameEvents.onVesselDestroy.Add(OnVesselDestroy);
 
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
     
@@ -57,7 +74,10 @@ namespace KerbalJointReinforcement
 
             GameEvents.onPartDestroyed.Add(OnPartDestroyed);
             GameEvents.onPartDie.Add(OnPartDestroyed);
-        }
+
+			GameEvents.onPhysicsEaseStart.Add(OnEaseStart);
+			GameEvents.onPhysicsEaseStop.Add(OnEaseStop);
+		}
 
         public void OnDestroy()
         {
@@ -66,6 +86,7 @@ namespace KerbalJointReinforcement
 
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+			GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
 
             GameEvents.onVesselGoOffRails.Remove(OnVesselOffRails);
     
@@ -75,10 +96,13 @@ namespace KerbalJointReinforcement
             GameEvents.onPartDestroyed.Remove(OnPartDestroyed);
             GameEvents.onPartDie.Remove(OnPartDestroyed);
 
+			GameEvents.onPhysicsEaseStart.Remove(OnEaseStart);
+			GameEvents.onPhysicsEaseStop.Remove(OnEaseStop);
+
             if(InputLockManager.GetControlLock("KJRLoadLock") == ControlTypes.ALL_SHIP_CONTROLS)
                 InputLockManager.RemoveControlLock("KJRLoadLock");
             updatedVessels = null;
-            vesselOffRails = null;
+			easingVessels = null;
             vesselJointStrengthened = null;
 
             multiJointManager = null;
@@ -86,15 +110,21 @@ namespace KerbalJointReinforcement
 
         private void OnVesselCreate(Vessel v)
         {
-            multiJointManager.VerifyVesselJoints(v);
-        }
+            multiJointManager.RemoveAllVesselJoints(v);
+            updatedVessels.Remove(v);
+
+#if IncludeAnalyzer
+			KJRAnalyzer.WasModified(v);
+#endif
+		}
 
         private void OnVesselWasModified(Vessel v)
         {
             if((object)v == null || v.isEVA)
                 return; 
             
-            multiJointManager.VerifyVesselJoints(v);
+            multiJointManager.RemoveAllVesselJoints(v);
+            updatedVessels.Remove(v);
 
             if(KJRJointUtils.debug)
             {
@@ -107,51 +137,30 @@ namespace KerbalJointReinforcement
                 Debug.Log(debugString);
             }
 
-            updatedVessels.Remove(v);
             RunVesselJointUpdateFunction(v);
-        }
+
+#if IncludeAnalyzer
+			KJRAnalyzer.WasModified(v);
+#endif
+		}
+
+		private void OnVesselDestroy(Vessel v)
+		{
+			easingVessels.Remove(v);
+
+            multiJointManager.RemoveAllVesselJoints(v);
+            updatedVessels.Remove(v);
+
+#if IncludeAnalyzer
+			KJRAnalyzer.Destroy(v);
+#endif
+		}
 
         // this function should be called by all compatible modules when
         // they call Vessel.CycleAllAutoStrut for AutoStruts
         public void CycleAllAutoStrut(Vessel v)
         {
             OnVesselWasModified(v);
-        }
-
-        private void OnVesselOffRails(Vessel v)
-        {
-            if((object)v == null || v.isEVA)
-                return; 
-            
-            RunVesselJointUpdateFunction(v);
-
-            if(!vesselOffRails.Contains(v) && v.precalc.isEasingGravity)
-            {
-                Debug.Log("KJR easing " + v.vesselName);
-
-                vesselOffRails.Add(v);
-
-                for(int i = 0; i < v.Parts.Count; ++i)
-                {
-                    Part p = v.Parts[i];
-                    p.crashTolerance = p.crashTolerance * 10000f;
-                    if(p.attachJoint)
-                        p.attachJoint.SetUnbreakable(true, false);
-
-                    Joint[] partJoints = p.GetComponents<Joint>();
-
-                    if(p.Modules.Contains<LaunchClamp>())
-                    {
-                        foreach(Joint j in partJoints)
-                            if(j.connectedBody == null)
-                            {
-                                GameObject.Destroy(j);
-                                KJRJointUtils.ConnectLaunchClampToGround(p);
-                                break;
-                            }
-                    }
-                }
-            }
         }
 
         private void OnVesselOnRails(Vessel v)
@@ -161,26 +170,79 @@ namespace KerbalJointReinforcement
 
             if(updatedVessels.Contains(v))
             {
-                if(vesselOffRails.Contains(v))
-                {
-                    foreach(Part p in v.Parts)
-                    {
-                        p.crashTolerance = p.crashTolerance / 10000;
-                        if(p.attachJoint)
-                            p.attachJoint.SetUnbreakable(false, false);
-                    }
-
-                    vesselOffRails.Remove(v);
-                }
                 vesselJointStrengthened.Remove(v);
                 updatedVessels.Remove(v);
             }
         }
 
+        private void OnVesselOffRails(Vessel v)
+        {
+            if((object)v == null || v.isEVA)
+                return; 
+            
+            RunVesselJointUpdateFunction(v);
+
+#if IncludeAnalyzer
+			KJRAnalyzer.WasModified(v);
+#endif
+		}
+
         private void OnPartDestroyed(Part p)
         {
             multiJointManager.RemovePartJoints(p);
         }
+
+		public void OnEaseStart(Vessel v)
+		{
+            Debug.Log("KJR easing " + v.vesselName);
+
+            foreach(Part p in v.Parts)
+            {
+                if(p.GetComponent<IJointLockState>() != null) // exclude those actions from joints that can be dynamically unlocked
+                    continue;
+
+                p.crashTolerance = p.crashTolerance * 10000f;
+                if(p.attachJoint)
+                    p.attachJoint.SetUnbreakable(true, false);
+
+                Joint[] partJoints = p.GetComponents<Joint>();
+
+                if(p.Modules.Contains<LaunchClamp>())
+                {
+                    for(int j = 0; j < partJoints.Length; j++)
+                        if(partJoints[j].connectedBody == null)
+                        {
+                            GameObject.Destroy(partJoints[j]);
+                            KJRJointUtils.ConnectLaunchClampToGround(p);
+                            break;
+                        }
+                }
+            }
+
+			easingVessels.Add(v);
+		}
+
+		public void OnEaseStop(Vessel v)
+		{
+			if(!easingVessels.Contains(v))
+				return; // we expect, that in this case, we are in an OnDestroy and should not get this call at all
+
+            foreach(Part p in v.Parts)
+            {
+                if(p.GetComponent<IJointLockState>() != null) // exclude those actions from joints that can be dynamically unlocked
+                    continue;
+
+                p.crashTolerance = p.crashTolerance / 10000f;
+                if(p.attachJoint)
+                    p.attachJoint.SetUnbreakable(false, false);
+            }
+
+            RunVesselJointUpdateFunction(v);
+
+#if IncludeAnalyzer
+			KJRAnalyzer.WasModified(v);
+#endif
+		}
 
         private void RunVesselJointUpdateFunction(Vessel v)
         {
@@ -238,28 +300,13 @@ namespace KerbalJointReinforcement
 
         public void FixedUpdate()
         {
-            if(FlightGlobals.ready && FlightGlobals.Vessels != null)
+#if IncludeAnalyzer
+			if(FlightGlobals.ready && FlightGlobals.Vessels != null)
             {
-                for(int i = 0; i < updatedVessels.Count; ++i)
-                {
-                    Vessel v = updatedVessels[i];
-                    if(v == null || !vesselOffRails.Contains(v))
-                        continue;
-
-                    if(!v.precalc.isEasingGravity)
-                    {
-                        foreach(Part p in v.Parts)
-                        {
-                            p.crashTolerance = p.crashTolerance / 10000f;
-                            if(p.attachJoint)
-                                p.attachJoint.SetUnbreakable(false, false);
-                        }
-
-                        vesselOffRails.Remove(v);
-                    }
-                }
-            }
-        }
+				KJRAnalyzer.Update();
+			}
+#endif
+       }
 
         private void UpdatePartJoint(Part p)
         {
@@ -622,6 +669,10 @@ namespace KerbalJointReinforcement
                 }
             }
 
+#if IncludeAnalyzer
+			addAdditionalJointToParent &= WindowManager.Instance.BuildAdditionalJointToParent;
+#endif
+
             if(addAdditionalJointToParent && p.parent.parent != null
             && KJRJointUtils.IsJointAdjustmentAllowed(p.parent)          // verify that parent is not an excluded part
             && KJRJointUtils.IsJointAdjustmentAllowed(p.parent.parent))  // verify that parent of parent (our target part) is not an excluded part
@@ -719,7 +770,7 @@ namespace KerbalJointReinforcement
                     newJoint.breakTorque = j.breakTorque;
 
                     for(int k = 0; k < partsCrossed.Count; k++)
-                        multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint);
+                        multiJointManager.RegisterMultiJoint(partsCrossed[k], newJoint, KJRMultiJointManager.Reason.AdditionalJointToParent);
                 }
             }
 
@@ -727,12 +778,12 @@ namespace KerbalJointReinforcement
                 Debug.Log(debugString.ToString());
         }
 
-        private void MultiPartJointBuildJoint(Part p, Part linkPart)
+        private void MultiPartJointBuildJoint(Part p, Part linkPart, KJRMultiJointManager.Reason jointReason)
         {
             if(multiJointManager.CheckMultiJointBetweenParts(p, linkPart) || !multiJointManager.TrySetValidLinkedSet(p, linkPart))
                 return;
 
-            multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, KJRJointUtils.BuildJoint(p, linkPart));
+            multiJointManager.RegisterMultiJointBetweenParts(p, linkPart, KJRJointUtils.BuildJoint(p, linkPart), jointReason);
         }
 
         public void MultiPartJointTreeChildren(Vessel v)
@@ -796,7 +847,10 @@ namespace KerbalJointReinforcement
                     if(!linkPart.Rigidbody || p.rb == linkPart.Rigidbody)
                         continue;
 
-                    MultiPartJointBuildJoint(p, linkPart);
+#if IncludeAnalyzer
+					if(WindowManager.Instance.BuildMultiPartJointTreeChildren)
+#endif
+					   MultiPartJointBuildJoint(p, linkPart, KJRMultiJointManager.Reason.MultiPartJointTreeChildren);
 
 
                     int part2Index = i + childPartsToConnect.Count / 2;
@@ -808,13 +862,19 @@ namespace KerbalJointReinforcement
                     if(!linkPart2.Rigidbody || p.rb == linkPart2.Rigidbody)
                         continue;
 
-                    MultiPartJointBuildJoint(p, linkPart2);
+#if IncludeAnalyzer
+					if(WindowManager.Instance.BuildMultiPartJointTreeChildren)
+#endif
+						MultiPartJointBuildJoint(p, linkPart2, KJRMultiJointManager.Reason.MultiPartJointTreeChildren);
 
 
                     if(!root.Rigidbody || p.rb == root.Rigidbody)
                         continue;
 
-                    MultiPartJointBuildJoint(p, root);
+#if IncludeAnalyzer
+					if(WindowManager.Instance.BuildMultiPartJointTreeChildrenRoot)
+#endif
+	                 MultiPartJointBuildJoint(p, root, KJRMultiJointManager.Reason.MultiPartJointTreeChildrenRoot);
                 }
             }
         }
