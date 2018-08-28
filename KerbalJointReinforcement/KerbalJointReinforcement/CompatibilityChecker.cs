@@ -64,7 +64,7 @@ namespace KerbalJointReinforcement
             // Even if you don't lock down functionality, you should return true if your users
             // can expect a future update to be available.
             //
-            return (Versioning.version_major == 1 && Versioning.version_minor == 3) || (Versioning.version_major == 0 && Versioning.version_minor == 1 && Versioning.Revision == 3);
+            return (Versioning.version_major == 1 && Versioning.version_minor == 4) || (Versioning.version_major == 0 && Versioning.version_minor == 1 && Versioning.Revision == 3);
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
